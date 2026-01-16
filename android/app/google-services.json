@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "63324663954",
+    "firebase_url": "https://digital-design-ec1f3-default-rtdb.firebaseio.com",
+    "project_id": "digital-design-ec1f3",
+    "storage_bucket": "digital-design-ec1f3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:63324663954:android:513c23416731935248364b",
+        "android_client_info": {
+          "package_name": "com.example.clinic_companion"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyATYzlBR_vwIKIDlrOSEPJOYyOgU29hxEE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
