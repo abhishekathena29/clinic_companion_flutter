@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import '../providers/dashboard_provider.dart';
 import '../widgets/alerts_panel.dart';
 import '../widgets/chronic_disease_chart.dart';
 import '../widgets/dashboard_layout.dart';
@@ -18,8 +19,10 @@ class DashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDesktop = _isDesktop(context);
-    final today = DateFormat('EEEE, d MMMM yyyy', 'en_IN').format(DateTime.now());
-    final shortDate = DateFormat('EEE, d MMM', 'en_IN').format(DateTime.now());
+    final provider = context.watch<DashboardProvider>();
+    final today = provider.today;
+    final shortDate = provider.shortDate;
+    final greeting = provider.greeting;
 
     return DashboardLayout(
       routeName: '/',
@@ -28,12 +31,12 @@ class DashboardScreen extends StatelessWidget {
         children: [
           if (!isDesktop)
             MobileHeader(
-              title: 'Good Morning, Dr. Kumar',
+              title: '$greeting, ${provider.doctorName}',
               subtitle: shortDate,
             ),
           if (isDesktop)
             Header(
-              title: 'Good Morning, Dr. Kumar',
+              title: '$greeting, ${provider.doctorName}',
               subtitle: today,
             ),
           const SizedBox(height: 16),
@@ -44,40 +47,16 @@ class DashboardScreen extends StatelessWidget {
             childAspectRatio: isDesktop ? 1.6 : 1.35,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            children: const [
-              StatCard(
-                title: "Today's Patients",
-                value: '24',
-                change: '+3 from yesterday',
-                changeType: StatChangeType.positive,
-                icon: Icons.people,
-                variant: StatVariant.primary,
-              ),
-              StatCard(
-                title: 'Appointments',
-                value: '18',
-                change: '4 remaining today',
-                changeType: StatChangeType.neutral,
-                icon: Icons.calendar_today,
-                variant: StatVariant.info,
-              ),
-              StatCard(
-                title: 'Avg. Wait Time',
-                value: '18 min',
-                change: 'down 5 min from last week',
-                changeType: StatChangeType.positive,
-                icon: Icons.access_time,
-                variant: StatVariant.success,
-              ),
-              StatCard(
-                title: 'Pending Follow-ups',
-                value: '7',
-                change: '3 overdue',
-                changeType: StatChangeType.negative,
-                icon: Icons.warning_amber,
-                variant: StatVariant.warning,
-              ),
-            ],
+            children: provider.stats
+                .map((stat) => StatCard(
+                      title: stat.title,
+                      value: stat.value,
+                      change: stat.change,
+                      changeType: stat.changeType,
+                      icon: stat.icon,
+                      variant: stat.variant,
+                    ))
+                .toList(),
           ),
           const SizedBox(height: 24),
           if (isDesktop)

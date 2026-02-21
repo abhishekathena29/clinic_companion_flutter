@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/patients_provider.dart';
+import '../providers/queue_provider.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_decorations.dart';
 import '../widgets/app_button.dart';
@@ -10,78 +13,105 @@ class QueueScreen extends StatelessWidget {
 
   bool _isDesktop(BuildContext context) => MediaQuery.of(context).size.width >= 768;
 
+  Future<void> _showAddToQueueDialog(BuildContext context) async {
+    final patients = context.read<PatientsProvider>().patients;
+    if (patients.isEmpty) return;
+
+    Patient selectedPatient = patients.first;
+    final reasonController = TextEditingController();
+    final waitController = TextEditingController();
+    QueuePriority priority = QueuePriority.normal;
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Check-in Patient'),
+              content: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    DropdownButtonFormField<Patient>(
+                      value: selectedPatient,
+                      decoration: const InputDecoration(labelText: 'Patient'),
+                      items: patients
+                          .map((patient) => DropdownMenuItem(
+                                value: patient,
+                                child: Text('${patient.name} • ${patient.patientId}'),
+                              ))
+                          .toList(),
+                      onChanged: (value) {
+                        if (value == null) return;
+                        setState(() => selectedPatient = value);
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: reasonController,
+                      decoration: const InputDecoration(labelText: 'Reason for visit'),
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<QueuePriority>(
+                      value: priority,
+                      decoration: const InputDecoration(labelText: 'Priority'),
+                      items: const [
+                        DropdownMenuItem(value: QueuePriority.normal, child: Text('Normal')),
+                        DropdownMenuItem(value: QueuePriority.urgent, child: Text('Urgent')),
+                      ],
+                      onChanged: (value) {
+                        if (value == null) return;
+                        setState(() => priority = value);
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: waitController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(labelText: 'Estimated wait (min)'),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    final reason = reasonController.text.trim().isEmpty
+                        ? 'General Consultation'
+                        : reasonController.text.trim();
+                    final wait = int.tryParse(waitController.text.trim());
+                    context.read<QueueProvider>().addToQueue(
+                          patientName: selectedPatient.name,
+                          patientId: selectedPatient.patientId,
+                          phone: selectedPatient.phone,
+                          reason: reason,
+                          priority: priority,
+                          waitTime: wait,
+                        );
+                    Navigator.of(dialogContext).pop();
+                  },
+                  child: const Text('Add to queue'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final queue = [
-      {
-        'id': '1',
-        'tokenNumber': 1,
-        'patientName': 'Priya Sharma',
-        'patientId': 'SV-2024-001',
-        'phone': '+91 98765 43210',
-        'checkInTime': '09:15 AM',
-        'waitTime': 45,
-        'status': 'in-consultation',
-        'reason': 'Follow-up - Diabetes',
-        'priority': 'normal',
-      },
-      {
-        'id': '2',
-        'tokenNumber': 2,
-        'patientName': 'Amit Patel',
-        'patientId': 'SV-2024-042',
-        'phone': '+91 87654 32109',
-        'checkInTime': '09:30 AM',
-        'waitTime': 30,
-        'status': 'waiting',
-        'reason': 'Fever & Cold',
-        'priority': 'urgent',
-      },
-      {
-        'id': '3',
-        'tokenNumber': 3,
-        'patientName': 'Sunita Devi',
-        'patientId': 'SV-2024-089',
-        'phone': '+91 76543 21098',
-        'checkInTime': '09:45 AM',
-        'waitTime': 15,
-        'status': 'waiting',
-        'reason': 'BP Check',
-        'priority': 'normal',
-      },
-      {
-        'id': '4',
-        'tokenNumber': 4,
-        'patientName': 'Rahul Singh',
-        'patientId': 'SV-2024-156',
-        'phone': '+91 65432 10987',
-        'checkInTime': '10:00 AM',
-        'waitTime': 5,
-        'status': 'waiting',
-        'reason': 'New Patient Registration',
-        'priority': 'normal',
-      },
-      {
-        'id': '5',
-        'tokenNumber': 5,
-        'patientName': 'Meera Joshi',
-        'patientId': 'SV-2024-203',
-        'phone': '+91 54321 09876',
-        'checkInTime': '10:05 AM',
-        'waitTime': 0,
-        'status': 'waiting',
-        'reason': 'Lab Results',
-        'priority': 'normal',
-      },
-    ];
-
-    final waitingCount = queue.where((p) => p['status'] == 'waiting').length;
-    final inConsultationCount = queue.where((p) => p['status'] == 'in-consultation').length;
-    final completedCount = queue.where((p) => p['status'] == 'completed').length;
-    final avgWait = queue
-            .where((p) => p['status'] == 'waiting')
-            .fold<int>(0, (sum, p) => sum + (p['waitTime'] as int)) /
-        (waitingCount == 0 ? 1 : waitingCount);
+    final provider = context.watch<QueueProvider>();
+    final queue = provider.queue;
+    final waitingCount = provider.waitingCount;
+    final inConsultationCount = provider.inConsultationCount;
+    final completedCount = provider.completedCount;
+    final avgWait = provider.averageWait;
 
     final isDesktop = _isDesktop(context);
 
@@ -106,16 +136,25 @@ class QueueScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-                const AppButton(label: 'Check-in Patient', icon: Icons.add),
+                AppButton(
+                  label: 'Check-in Patient',
+                  icon: Icons.add,
+                  onPressed: () => _showAddToQueueDialog(context),
+                ),
               ],
             ),
           if (!isDesktop) ...[
             const SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: const [
-                Text("Today's Queue", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-                AppButton(label: 'Check-in', icon: Icons.add, size: AppButtonSize.small),
+              children: [
+                const Text("Today's Queue", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                AppButton(
+                  label: 'Check-in',
+                  icon: Icons.add,
+                  size: AppButtonSize.small,
+                  onPressed: () => _showAddToQueueDialog(context),
+                ),
               ],
             ),
           ],
@@ -131,15 +170,15 @@ class QueueScreen extends StatelessWidget {
               _statTile(Icons.access_time, waitingCount.toString(), 'Waiting', AppColors.warning),
               _statTile(Icons.person, inConsultationCount.toString(), 'Consulting', AppColors.info),
               _statTile(Icons.check_circle, completedCount.toString(), 'Done', AppColors.success),
-              _statTile(Icons.access_time, '${avgWait.round()}m', 'Avg. Wait', AppColors.primary),
+              _statTile(Icons.access_time, '${avgWait}m', 'Avg. Wait', AppColors.primary),
             ],
           ),
           const SizedBox(height: 16),
           if (!isDesktop)
             Column(
               children: queue.map((patient) {
-                final statusStyle = _statusStyle(patient['status'] as String);
-                final isUrgent = patient['priority'] == 'urgent';
+                final statusStyle = _statusStyle(patient.status);
+                final isUrgent = patient.priority == QueuePriority.urgent;
 
                 return Container(
                   margin: const EdgeInsets.only(bottom: 12),
@@ -152,7 +191,7 @@ class QueueScreen extends StatelessWidget {
                         width: 48,
                         height: 48,
                         decoration: BoxDecoration(
-                          color: patient['status'] == 'in-consultation'
+                          color: patient.status == QueueStatus.inConsultation
                               ? AppColors.info
                               : isUrgent
                                   ? AppColors.destructive
@@ -161,11 +200,11 @@ class QueueScreen extends StatelessWidget {
                         ),
                         alignment: Alignment.center,
                         child: Text(
-                          '${patient['tokenNumber']}',
+                          '${patient.tokenNumber}',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: patient['status'] == 'in-consultation' || isUrgent
+                            color: patient.status == QueueStatus.inConsultation || isUrgent
                                 ? Colors.white
                                 : AppColors.mutedForeground,
                           ),
@@ -179,7 +218,7 @@ class QueueScreen extends StatelessWidget {
                             Row(
                               children: [
                                 Text(
-                                  patient['patientName'] as String,
+                                  patient.patientName,
                                   style: const TextStyle(fontWeight: FontWeight.w600),
                                 ),
                                 if (isUrgent) ...[
@@ -200,7 +239,7 @@ class QueueScreen extends StatelessWidget {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              patient['reason'] as String,
+                              patient.reason,
                               style: TextStyle(fontSize: 12, color: AppColors.mutedForeground),
                             ),
                             const SizedBox(height: 10),
@@ -226,13 +265,11 @@ class QueueScreen extends StatelessWidget {
                                   ),
                                 ),
                                 Text(
-                                  (patient['waitTime'] as int) > 0
-                                      ? "${patient['waitTime']}m wait"
-                                      : 'Just in',
+                                  patient.waitTime > 0 ? "${patient.waitTime}m wait" : 'Just in',
                                   style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,
-                                    color: _waitColor(patient['waitTime'] as int),
+                                    color: _waitColor(patient.waitTime),
                                   ),
                                 ),
                               ],
@@ -240,7 +277,7 @@ class QueueScreen extends StatelessWidget {
                             const SizedBox(height: 10),
                             Row(
                               children: [
-                                if (patient['status'] == 'waiting')
+                                if (patient.status == QueueStatus.waiting)
                                   Expanded(
                                     child: AppButton(
                                       label: 'Start Consultation',
@@ -248,7 +285,7 @@ class QueueScreen extends StatelessWidget {
                                       size: AppButtonSize.small,
                                     ),
                                   ),
-                                if (patient['status'] == 'in-consultation')
+                                if (patient.status == QueueStatus.inConsultation)
                                   Expanded(
                                     child: AppButton(
                                       label: 'Complete',
@@ -290,13 +327,13 @@ class QueueScreen extends StatelessWidget {
                   const Divider(height: 1),
                   Column(
                     children: queue.map((patient) {
-                      final statusStyle = _statusStyle(patient['status'] as String);
-                      final isUrgent = patient['priority'] == 'urgent';
+                      final statusStyle = _statusStyle(patient.status);
+                      final isUrgent = patient.priority == QueuePriority.urgent;
 
                       return Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: patient['status'] == 'in-consultation'
+                          color: patient.status == QueueStatus.inConsultation
                               ? AppColors.info.withOpacity(0.05)
                               : Colors.transparent,
                           border: Border(bottom: BorderSide(color: AppColors.border.withOpacity(0.7))),
@@ -307,7 +344,7 @@ class QueueScreen extends StatelessWidget {
                               width: 56,
                               height: 56,
                               decoration: BoxDecoration(
-                                color: patient['status'] == 'in-consultation'
+                                color: patient.status == QueueStatus.inConsultation
                                     ? AppColors.info
                                     : isUrgent
                                         ? AppColors.destructive
@@ -316,11 +353,11 @@ class QueueScreen extends StatelessWidget {
                               ),
                               alignment: Alignment.center,
                               child: Text(
-                                '${patient['tokenNumber']}',
+                                '${patient.tokenNumber}',
                                 style: TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
-                                  color: patient['status'] == 'in-consultation' || isUrgent
+                                  color: patient.status == QueueStatus.inConsultation || isUrgent
                                       ? Colors.white
                                       : AppColors.mutedForeground,
                                 ),
@@ -334,7 +371,7 @@ class QueueScreen extends StatelessWidget {
                                   Row(
                                     children: [
                                       Text(
-                                        patient['patientName'] as String,
+                                        patient.patientName,
                                         style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                                       ),
                                       if (isUrgent) ...[
@@ -382,7 +419,7 @@ class QueueScreen extends StatelessWidget {
                                           borderRadius: BorderRadius.circular(6),
                                         ),
                                         child: Text(
-                                          patient['patientId'] as String,
+                                          patient.patientId,
                                           style: TextStyle(fontSize: 11, color: AppColors.mutedForeground),
                                         ),
                                       ),
@@ -392,14 +429,14 @@ class QueueScreen extends StatelessWidget {
                                           Icon(Icons.phone, size: 14, color: AppColors.mutedForeground),
                                           const SizedBox(width: 4),
                                           Text(
-                                            patient['phone'] as String,
+                                            patient.phone,
                                             style: TextStyle(fontSize: 12, color: AppColors.mutedForeground),
                                           ),
                                         ],
                                       ),
                                       const SizedBox(width: 12),
                                       Text(
-                                        patient['reason'] as String,
+                                        patient.reason,
                                         style: TextStyle(fontSize: 12, color: AppColors.mutedForeground),
                                       ),
                                     ],
@@ -412,18 +449,16 @@ class QueueScreen extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
                                 Text(
-                                  'Check-in: ${patient['checkInTime']}',
+                                  'Check-in: ${patient.checkInTime}',
                                   style: TextStyle(fontSize: 12, color: AppColors.mutedForeground),
                                 ),
                                 const SizedBox(height: 6),
                                 Text(
-                                  (patient['waitTime'] as int) > 0
-                                      ? "${patient['waitTime']} min wait"
-                                      : 'Just arrived',
+                                  patient.waitTime > 0 ? "${patient.waitTime} min wait" : 'Just arrived',
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
-                                    color: _waitColor(patient['waitTime'] as int),
+                                    color: _waitColor(patient.waitTime),
                                   ),
                                 ),
                               ],
@@ -431,9 +466,9 @@ class QueueScreen extends StatelessWidget {
                             const SizedBox(width: 16),
                             Row(
                               children: [
-                                if (patient['status'] == 'waiting')
+                                if (patient.status == QueueStatus.waiting)
                                   const AppButton(label: 'Start', icon: Icons.play_arrow, size: AppButtonSize.small),
-                                if (patient['status'] == 'in-consultation')
+                                if (patient.status == QueueStatus.inConsultation)
                                   const AppButton(
                                     label: 'Complete',
                                     icon: Icons.check_circle,
@@ -506,9 +541,9 @@ class QueueScreen extends StatelessWidget {
     );
   }
 
-  _StatusStyle _statusStyle(String status) {
+  _StatusStyle _statusStyle(QueueStatus status) {
     switch (status) {
-      case 'in-consultation':
+      case QueueStatus.inConsultation:
         return _StatusStyle(
           label: 'With Doctor',
           icon: Icons.person,
@@ -516,7 +551,7 @@ class QueueScreen extends StatelessWidget {
           foreground: AppColors.info,
           border: AppColors.info.withOpacity(0.3),
         );
-      case 'completed':
+      case QueueStatus.completed:
         return _StatusStyle(
           label: 'Completed',
           icon: Icons.check_circle,
@@ -524,7 +559,7 @@ class QueueScreen extends StatelessWidget {
           foreground: AppColors.success,
           border: AppColors.success.withOpacity(0.3),
         );
-      case 'no-show':
+      case QueueStatus.noShow:
         return _StatusStyle(
           label: 'No Show',
           icon: Icons.cancel,
@@ -532,8 +567,7 @@ class QueueScreen extends StatelessWidget {
           foreground: AppColors.destructive,
           border: AppColors.destructive.withOpacity(0.3),
         );
-      case 'waiting':
-      default:
+      case QueueStatus.waiting:
         return _StatusStyle(
           label: 'Waiting',
           icon: Icons.access_time,
