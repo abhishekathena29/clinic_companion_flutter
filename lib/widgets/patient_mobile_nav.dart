@@ -1,19 +1,18 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 
-class MobileNav extends StatelessWidget {
-  const MobileNav({super.key, required this.currentRoute});
+class PatientMobileNav extends StatelessWidget {
+  const PatientMobileNav({super.key, required this.currentRoute});
 
   final String currentRoute;
 
   @override
   Widget build(BuildContext context) {
     final items = [
-      _NavItem('Home', Icons.dashboard, '/doctor'),
-      _NavItem('Patients', Icons.people, '/doctor/patients'),
-      _NavItem('Queue', Icons.list_alt, '/doctor/queue'),
-      _NavItem('Schedule', Icons.calendar_today, '/doctor/appointments'),
-      _NavItem('More', Icons.menu, '/doctor/settings'),
+      _NavItem('Home', Icons.home_rounded, '/patient'),
+      _NavItem('Doctors', Icons.medical_services_rounded, '/patient/doctors'),
+      _NavItem('Appointments', Icons.event_available_rounded, '/patient/appointments'),
+      _NavItem('Settings', Icons.settings_rounded, '/patient/settings'),
     ];
 
     return Container(

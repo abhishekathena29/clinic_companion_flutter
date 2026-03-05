@@ -114,7 +114,7 @@ class QueueList extends StatelessWidget {
             ),
             child: TextButton(
               onPressed: () {
-                Navigator.of(context).pushReplacementNamed('/queue');
+                Navigator.of(context).pushReplacementNamed('/doctor/queue');
               },
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4),
@@ -170,7 +170,7 @@ class _QueueListItemState extends State<_QueueListItem> {
       onExit: (_) => setState(() => _isHovered = false),
       child: InkWell(
         onTap: () {
-          Navigator.of(context).pushReplacementNamed('/queue');
+          Navigator.of(context).pushReplacementNamed('/doctor/queue');
         },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),

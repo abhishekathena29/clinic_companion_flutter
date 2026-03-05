@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import '../providers/patients_provider.dart';
-import '../theme/app_colors.dart';
-import '../theme/app_decorations.dart';
-import '../widgets/app_button.dart';
-import '../widgets/dashboard_layout.dart';
-import '../widgets/mobile_header.dart';
+import '../../../theme/app_colors.dart';
+import '../../../theme/app_decorations.dart';
+import '../../../widgets/app_button.dart';
+import '../../../widgets/dashboard_layout.dart';
+import '../../../widgets/mobile_header.dart';
+import 'patients_provider.dart';
 
 class PatientsScreen extends StatelessWidget {
   const PatientsScreen({super.key});
@@ -167,7 +167,7 @@ class PatientsScreen extends StatelessWidget {
     final filteredPatients = provider.filteredPatients;
 
     return DashboardLayout(
-      routeName: '/patients',
+      routeName: '/doctor/patients',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

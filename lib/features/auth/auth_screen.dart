@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/auth_provider.dart';
-import '../theme/app_colors.dart';
-import '../theme/app_decorations.dart';
-import '../widgets/app_button.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/app_decorations.dart';
+import '../../widgets/app_button.dart';
+import 'auth_provider.dart';
+import 'user_type.dart';
 
 class AuthScreen extends StatelessWidget {
   const AuthScreen({super.key});
@@ -15,6 +16,7 @@ class AuthScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDesktop = _isDesktop(context);
     final provider = context.watch<AuthProvider>();
+    final isDoctor = provider.selectedType == UserType.doctor;
 
     return Scaffold(
       body: Container(
@@ -43,7 +45,7 @@ class AuthScreen extends StatelessWidget {
                             children: [
                               Text(
                                 provider.isLogin
-                                    ? 'Welcome back,\nDoctor'
+                                    ? 'Welcome back,\n${isDoctor ? 'Doctor' : 'Patient'}'
                                     : 'Join Clinic\nCompanion',
                                 style: const TextStyle(
                                   color: Colors.white,
@@ -119,6 +121,11 @@ class AuthScreen extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 32),
+                        _UserTypeSelector(
+                          selected: provider.selectedType,
+                          onChanged: provider.updateUserType,
+                        ),
+                        const SizedBox(height: 24),
                         if (!provider.isLogin) ...[
                           TextField(
                             onChanged: provider.updateName,
@@ -265,10 +272,10 @@ class AuthScreen extends StatelessWidget {
                                 ? null
                                 : () async {
                                     await provider.submit();
-                                    if (context.mounted) {
-                                      Navigator.of(
-                                        context,
-                                      ).pushReplacementNamed('/');
+                                    if (context.mounted && provider.isAuthenticated) {
+                                      Navigator.of(context).pushReplacementNamed(
+                                        provider.homeRoute,
+                                      );
                                     }
                                   },
                           ),
@@ -374,6 +381,122 @@ class _BrandChip extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _UserTypeSelector extends StatelessWidget {
+  const _UserTypeSelector({
+    required this.selected,
+    required this.onChanged,
+  });
+
+  final UserType selected;
+  final ValueChanged<UserType> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'I am a',
+          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _TypeCard(
+                title: 'Doctor',
+                subtitle: 'Manage appointments',
+                icon: Icons.medical_services_rounded,
+                isActive: selected == UserType.doctor,
+                onTap: () => onChanged(UserType.doctor),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _TypeCard(
+                title: 'Patient',
+                subtitle: 'Book consultations',
+                icon: Icons.personal_injury_rounded,
+                isActive: selected == UserType.patient,
+                onTap: () => onChanged(UserType.patient),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _TypeCard extends StatelessWidget {
+  const _TypeCard({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.isActive,
+    required this.onTap,
+  });
+
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final bool isActive;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = isActive ? AppColors.primary : AppColors.mutedForeground;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isActive ? AppColors.primaryLight.withOpacity(0.6) : AppColors.muted,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isActive ? AppColors.primary : AppColors.border,
+          ),
+          boxShadow: isActive
+              ? [
+                  BoxShadow(
+                    color: AppColors.primary.withOpacity(0.2),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : [],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, color: color, size: 22),
+            const SizedBox(height: 12),
+            Text(
+              title,
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                color: color,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              style: TextStyle(
+                color: color.withOpacity(0.8),
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

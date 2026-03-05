@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../widgets/stat_card.dart';
+import '../../../widgets/stat_card.dart';
 
 class DashboardStat {
   const DashboardStat({

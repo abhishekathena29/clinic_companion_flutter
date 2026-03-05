@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/dashboard_provider.dart';
-import '../widgets/alerts_panel.dart';
-import '../widgets/chronic_disease_chart.dart';
-import '../widgets/dashboard_layout.dart';
-import '../widgets/header.dart';
-import '../widgets/mobile_header.dart';
-import '../widgets/queue_list.dart';
-import '../widgets/recent_patients.dart';
-import '../widgets/stat_card.dart';
-import '../widgets/upcoming_appointments.dart';
+import '../../../widgets/alerts_panel.dart';
+import '../../../widgets/chronic_disease_chart.dart';
+import '../../../widgets/dashboard_layout.dart';
+import '../../../widgets/header.dart';
+import '../../../widgets/mobile_header.dart';
+import '../../../widgets/queue_list.dart';
+import '../../../widgets/recent_patients.dart';
+import '../../../widgets/stat_card.dart';
+import '../../../widgets/upcoming_appointments.dart';
+import '../../auth/auth_provider.dart';
+import 'dashboard_provider.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -20,23 +21,25 @@ class DashboardScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDesktop = _isDesktop(context);
     final provider = context.watch<DashboardProvider>();
+    final auth = context.watch<AuthProvider>();
     final today = provider.today;
     final shortDate = provider.shortDate;
     final greeting = provider.greeting;
+    final doctorName = auth.profileName.isEmpty ? provider.doctorName : auth.profileName;
 
     return DashboardLayout(
-      routeName: '/',
+      routeName: '/doctor',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (!isDesktop)
             MobileHeader(
-              title: '$greeting, ${provider.doctorName}',
+              title: '$greeting, $doctorName',
               subtitle: shortDate,
             ),
           if (isDesktop)
             Header(
-              title: '$greeting, ${provider.doctorName}',
+              title: '$greeting, $doctorName',
               subtitle: today,
             ),
           const SizedBox(height: 16),

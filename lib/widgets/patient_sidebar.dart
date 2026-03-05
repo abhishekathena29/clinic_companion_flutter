@@ -3,14 +3,14 @@ import 'package:provider/provider.dart';
 import '../features/auth/auth_provider.dart';
 import '../theme/app_colors.dart';
 
-class Sidebar extends StatelessWidget {
-  const Sidebar({super.key});
+class PatientSidebar extends StatelessWidget {
+  const PatientSidebar({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final currentRoute = ModalRoute.of(context)?.settings.name ?? '/doctor';
+    final currentRoute = ModalRoute.of(context)?.settings.name ?? '/patient';
     final auth = context.watch<AuthProvider>();
-    final name = auth.profileName.isEmpty ? 'Doctor' : auth.profileName;
+    final name = auth.profileName.isEmpty ? 'Patient' : auth.profileName;
 
     return Container(
       width: 280,
@@ -48,7 +48,7 @@ class Sidebar extends StatelessWidget {
                       ],
                     ),
                     child: const Icon(
-                      Icons.medical_services_rounded,
+                      Icons.favorite_rounded,
                       color: Colors.white,
                       size: 26,
                     ),
@@ -68,7 +68,7 @@ class Sidebar extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Health Vault',
+                        'Care Portal',
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.white.withOpacity(0.8),
@@ -89,84 +89,29 @@ class Sidebar extends StatelessWidget {
                   children: [
                     _NavItem(
                       label: 'Dashboard',
-                      icon: Icons.dashboard_rounded,
-                      route: '/doctor',
-                      isActive: currentRoute == '/doctor',
+                      icon: Icons.home_rounded,
+                      route: '/patient',
+                      isActive: currentRoute == '/patient',
                     ),
                     _NavItem(
-                      label: 'Patients',
-                      icon: Icons.people_alt_rounded,
-                      route: '/doctor/patients',
-                      isActive: currentRoute == '/doctor/patients',
+                      label: 'Doctors',
+                      icon: Icons.medical_services_rounded,
+                      route: '/patient/doctors',
+                      isActive: currentRoute == '/patient/doctors',
                     ),
                     _NavItem(
-                      label: 'Queue',
-                      icon: Icons.list_alt_rounded,
-                      route: '/doctor/queue',
-                      isActive: currentRoute == '/doctor/queue',
-                    ),
-                    _NavItem(
-                      label: 'Schedule',
-                      icon: Icons.calendar_month_rounded,
-                      route: '/doctor/appointments',
-                      isActive: currentRoute == '/doctor/appointments',
-                    ),
-                    _NavItem(
-                      label: 'Reports',
-                      icon: Icons.insert_chart_rounded,
-                      route: '/doctor/reports',
-                      isActive: currentRoute == '/doctor/reports',
+                      label: 'Appointments',
+                      icon: Icons.event_available_rounded,
+                      route: '/patient/appointments',
+                      isActive: currentRoute == '/patient/appointments',
                     ),
                     _NavItem(
                       label: 'Settings',
                       icon: Icons.settings_rounded,
-                      route: '/doctor/settings',
-                      isActive: currentRoute == '/doctor/settings',
+                      route: '/patient/settings',
+                      isActive: currentRoute == '/patient/settings',
                     ),
                   ],
-                ),
-              ),
-            ),
-            const Divider(color: Color.fromRGBO(255, 255, 255, 0.1), height: 1),
-            Padding(
-              padding: const EdgeInsets.all(24),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () {},
-                  borderRadius: BorderRadius.circular(AppColors.borderRadius),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 16,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(
-                        AppColors.borderRadius,
-                      ),
-                      border: Border.all(color: Colors.white.withOpacity(0.15)),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
-                        Icon(
-                          Icons.qr_code_scanner_rounded,
-                          size: 20,
-                          color: Colors.white,
-                        ),
-                        SizedBox(width: 10),
-                        Text(
-                          'Scan Patient QR',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
                 ),
               ),
             ),
@@ -190,9 +135,9 @@ class Sidebar extends StatelessWidget {
                       ],
                     ),
                     alignment: Alignment.center,
-                    child: const Text(
-                      'DR',
-                      style: TextStyle(
+                    child: Text(
+                      name.isEmpty ? 'PT' : name.substring(0, 1).toUpperCase(),
+                      style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                         fontSize: 18,
@@ -206,7 +151,7 @@ class Sidebar extends StatelessWidget {
                       children: [
                         Text(
                           name,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
@@ -215,7 +160,7 @@ class Sidebar extends StatelessWidget {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          'City Care Clinic',
+                          'Patient Profile',
                           style: TextStyle(
                             fontSize: 13,
                             color: Colors.white.withOpacity(0.7),
@@ -293,7 +238,7 @@ class _NavItemState extends State<_NavItem> {
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
           onTap: () {
-            final current = ModalRoute.of(context)?.settings.name ?? '/';
+            final current = ModalRoute.of(context)?.settings.name ?? '/patient';
             if (current != widget.route) {
               Navigator.of(context).pushReplacementNamed(widget.route);
             }
@@ -305,8 +250,8 @@ class _NavItemState extends State<_NavItem> {
               color: isSelected
                   ? AppColors.primary
                   : _isHovered
-                  ? Colors.white.withOpacity(0.08)
-                  : Colors.transparent,
+                      ? Colors.white.withOpacity(0.08)
+                      : Colors.transparent,
               borderRadius: BorderRadius.circular(16),
               boxShadow: isSelected
                   ? [
@@ -326,8 +271,8 @@ class _NavItemState extends State<_NavItem> {
                   color: isSelected
                       ? Colors.white
                       : _isHovered
-                      ? Colors.white
-                      : Colors.white.withOpacity(0.7),
+                          ? Colors.white
+                          : Colors.white.withOpacity(0.7),
                 ),
                 const SizedBox(width: 16),
                 Text(
@@ -336,8 +281,8 @@ class _NavItemState extends State<_NavItem> {
                     color: isSelected
                         ? Colors.white
                         : _isHovered
-                        ? Colors.white
-                        : Colors.white.withOpacity(0.8),
+                            ? Colors.white
+                            : Colors.white.withOpacity(0.8),
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
                     fontSize: 16,
                   ),

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../theme/app_colors.dart';
+import '../../theme/app_colors.dart';
 
 class NotFoundScreen extends StatelessWidget {
   const NotFoundScreen({super.key});
@@ -21,7 +21,7 @@ class NotFoundScreen extends StatelessWidget {
             const SizedBox(height: 12),
             TextButton(
               onPressed: () {
-                Navigator.of(context).pushReplacementNamed('/');
+                Navigator.of(context).pushReplacementNamed('/auth');
               },
               child: Text(
                 'Return to Home',

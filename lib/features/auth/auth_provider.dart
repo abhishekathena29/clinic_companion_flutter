@@ -2,11 +2,18 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'user_type.dart';
 
 class AuthProvider extends ChangeNotifier {
   AuthProvider() {
     _subscription = _auth.authStateChanges().listen((user) {
       _user = user;
+      if (user != null) {
+        _loadUserProfile(user);
+      } else {
+        _userType = null;
+        _profileName = '';
+      }
       notifyListeners();
     });
   }
@@ -25,6 +32,9 @@ class AuthProvider extends ChangeNotifier {
   String _email = '';
   String _password = '';
   String _confirmPassword = '';
+  UserType _selectedType = UserType.doctor;
+  UserType? _userType;
+  String _profileName = '';
 
   User? _user;
 
@@ -34,11 +44,18 @@ class AuthProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
   User? get user => _user;
+  UserType get selectedType => _selectedType;
+  UserType? get userType => _userType;
+  String get profileName => _profileName.isEmpty ? (_user?.displayName ?? '') : _profileName;
+  bool get isAuthenticated => _user != null;
 
   String get name => _name;
   String get email => _email;
   String get password => _password;
   String get confirmPassword => _confirmPassword;
+
+  UserType get effectiveUserType => _userType ?? _selectedType;
+  String get homeRoute => effectiveUserType == UserType.doctor ? '/doctor' : '/patient';
 
   @override
   void dispose() {
@@ -82,6 +99,11 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void updateUserType(UserType value) {
+    _selectedType = value;
+    notifyListeners();
+  }
+
   Future<void> submit() async {
     if (_isLogin) {
       await signIn();
@@ -100,7 +122,8 @@ class AuthProvider extends ChangeNotifier {
 
     _setLoading(true);
     try {
-      await _auth.signInWithEmailAndPassword(email: _email, password: _password);
+      final result = await _auth.signInWithEmailAndPassword(email: _email, password: _password);
+      await _loadUserProfile(result.user);
     } on FirebaseAuthException catch (e) {
       _error = e.message ?? 'Unable to sign in. Please try again.';
     } finally {
@@ -135,12 +158,17 @@ class AuthProvider extends ChangeNotifier {
     try {
       final result = await _auth.createUserWithEmailAndPassword(email: _email, password: _password);
       await result.user?.updateDisplayName(_name.trim());
-      await _firestore.collection('users').doc(result.user?.uid).set({
-        'uid': result.user?.uid,
-        'name': _name.trim(),
-        'email': _email,
-        'createdAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
+      await _firestore.collection('users').doc(result.user?.uid).set(
+        {
+          'uid': result.user?.uid,
+          'name': _name.trim(),
+          'email': _email,
+          'userType': _selectedType.value,
+          'createdAt': FieldValue.serverTimestamp(),
+        },
+        SetOptions(merge: true),
+      );
+      await _loadUserProfile(result.user);
     } on FirebaseAuthException catch (e) {
       _error = e.message ?? 'Unable to create account. Please try again.';
     } finally {
@@ -150,6 +178,36 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> signOut() async {
     await _auth.signOut();
+    _userType = null;
+    _profileName = '';
+  }
+
+  Future<void> _loadUserProfile(User? user) async {
+    if (user == null) return;
+    try {
+      final doc = await _firestore.collection('users').doc(user.uid).get();
+      if (doc.exists) {
+        final data = doc.data();
+        final name = data?['name']?.toString() ?? user.displayName ?? '';
+        final typeValue = data?['userType']?.toString();
+        _profileName = name;
+        _userType = UserTypeX.tryParse(typeValue) ?? _selectedType;
+        _selectedType = _userType ?? _selectedType;
+      } else {
+        _profileName = user.displayName ?? '';
+        _userType = _selectedType;
+      }
+
+      if (_userType != null && (doc.data()?['userType'] == null)) {
+        await _firestore.collection('users').doc(user.uid).set(
+          {'userType': _userType!.value},
+          SetOptions(merge: true),
+        );
+      }
+    } catch (_) {
+      _userType = _selectedType;
+    }
+    notifyListeners();
   }
 
   void _setLoading(bool value) {

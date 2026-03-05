@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/onboarding_provider.dart';
-import '../theme/app_colors.dart';
-import '../theme/app_decorations.dart';
-import '../widgets/app_button.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/app_decorations.dart';
+import '../../widgets/app_button.dart';
+import 'onboarding_provider.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -163,7 +163,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                   variant: AppButtonVariant.ghost,
                                   onPressed: () => Navigator.of(
                                     context,
-                                  ).pushReplacementNamed('/'),
+                                  ).pushReplacementNamed('/auth'),
                                 ),
                               ),
                               const SizedBox(width: 16),

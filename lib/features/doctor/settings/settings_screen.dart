@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/settings_provider.dart';
-import '../theme/app_colors.dart';
-import '../theme/app_decorations.dart';
-import '../widgets/app_button.dart';
-import '../widgets/dashboard_layout.dart';
-import '../widgets/mobile_header.dart';
+import '../../../theme/app_colors.dart';
+import '../../../theme/app_decorations.dart';
+import '../../../widgets/app_button.dart';
+import '../../../widgets/dashboard_layout.dart';
+import '../../../widgets/mobile_header.dart';
+import 'settings_provider.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -19,7 +19,7 @@ class SettingsScreen extends StatelessWidget {
     final provider = context.watch<SettingsProvider>();
 
     return DashboardLayout(
-      routeName: '/settings',
+      routeName: '/doctor/settings',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

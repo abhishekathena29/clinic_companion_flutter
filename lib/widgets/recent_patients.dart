@@ -85,7 +85,7 @@ class RecentPatients extends StatelessWidget {
                 ),
                 TextButton(
                   onPressed: () {
-                    Navigator.of(context).pushReplacementNamed('/patients');
+                    Navigator.of(context).pushReplacementNamed('/doctor/patients');
                   },
                   style: TextButton.styleFrom(
                     padding: const EdgeInsets.symmetric(
@@ -143,7 +143,7 @@ class _RecentPatientItemState extends State<_RecentPatientItem> {
       onExit: (_) => setState(() => _isHovered = false),
       child: InkWell(
         onTap: () {
-          Navigator.of(context).pushReplacementNamed('/patients');
+          Navigator.of(context).pushReplacementNamed('/doctor/patients');
         },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
