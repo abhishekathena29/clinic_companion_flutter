@@ -13,41 +13,35 @@ class PatientLayout extends StatelessWidget {
   final Widget child;
   final String routeName;
 
-  bool _isDesktop(BuildContext context) => MediaQuery.of(context).size.width >= 768;
+  bool _isDesktop(BuildContext context) =>
+      MediaQuery.of(context).size.width >= 768;
 
   @override
   Widget build(BuildContext context) {
     final isDesktop = _isDesktop(context);
 
     return Scaffold(
+      extendBody: !isDesktop,
       backgroundColor: AppColors.background,
-      body: Stack(
+      body: Row(
         children: [
-          Row(
-            children: [
-              if (isDesktop) const PatientSidebar(),
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: EdgeInsets.fromLTRB(
-                    isDesktop ? 32 : 16,
-                    16,
-                    isDesktop ? 32 : 16,
-                    isDesktop ? 24 : 96,
-                  ),
-                  child: child,
-                ),
+          if (isDesktop) const PatientSidebar(),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.fromLTRB(
+                isDesktop ? 32 : 16,
+                16,
+                isDesktop ? 32 : 16,
+                isDesktop ? 24 : 96,
               ),
-            ],
-          ),
-          if (!isDesktop)
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: PatientMobileNav(currentRoute: routeName),
+              child: child,
             ),
+          ),
         ],
       ),
+      bottomNavigationBar: isDesktop
+          ? null
+          : PatientMobileNav(currentRoute: routeName),
     );
   }
 }

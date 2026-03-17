@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../../features/auth/auth_provider.dart';
 import '../../../shared/appointments_repository.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_decorations.dart';
@@ -172,6 +173,25 @@ class ScheduleScreen extends StatelessWidget {
                   label: 'Schedule',
                   onPressed: () {
                     context.read<ScheduleProvider>().addAppointment(
+                      doctorId: context.read<AuthProvider>().user?.uid ?? '',
+                      doctorName: context.read<AuthProvider>().profileName,
+                      specialty:
+                          context
+                              .read<AppointmentsRepository>()
+                              .doctorById(
+                                context.read<AuthProvider>().user?.uid,
+                              )
+                              ?.specialty ??
+                          'General Medicine',
+                      clinic:
+                          context
+                              .read<AppointmentsRepository>()
+                              .doctorById(
+                                context.read<AuthProvider>().user?.uid,
+                              )
+                              ?.clinic ??
+                          'Clinic Companion',
+                      patientId: selectedPatient.id,
                       patient: selectedPatient.name,
                       date: selectedDate,
                       time: timeController.text.trim(),
@@ -186,6 +206,7 @@ class ScheduleScreen extends StatelessWidget {
                         DateTime.now().day == selectedDate.day;
                     if (addToQueue && isToday) {
                       context.read<QueueProvider>().addToQueue(
+                        doctorId: context.read<AuthProvider>().user?.uid ?? '',
                         patientName: selectedPatient.name,
                         patientId: selectedPatient.patientId,
                         phone: selectedPatient.phone,
@@ -208,8 +229,10 @@ class ScheduleScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDesktop = _isDesktop(context);
     final provider = context.watch<ScheduleProvider>();
+    final auth = context.watch<AuthProvider>();
+    final doctorId = auth.user?.uid ?? '';
     final selectedDate = provider.selectedDate;
-    final appointments = provider.appointmentsForSelectedDate;
+    final appointments = provider.appointmentsForDate(doctorId);
 
     return DashboardLayout(
       routeName: '/doctor/appointments',

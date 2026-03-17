@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../auth/auth_provider.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_decorations.dart';
+import '../../../widgets/app_button.dart';
 import '../../../widgets/patient_layout.dart';
 import 'patient_settings_provider.dart';
 
 class PatientSettingsScreen extends StatelessWidget {
   const PatientSettingsScreen({super.key});
 
-  bool _isDesktop(BuildContext context) => MediaQuery.of(context).size.width >= 768;
+  bool _isDesktop(BuildContext context) =>
+      MediaQuery.of(context).size.width >= 768;
 
   @override
   Widget build(BuildContext context) {
@@ -28,6 +31,21 @@ class PatientSettingsScreen extends StatelessWidget {
           Text(
             'Personalize how you receive updates from your clinics.',
             style: TextStyle(color: AppColors.mutedForeground, fontSize: 15),
+          ),
+          const SizedBox(height: 24),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: AppButton(
+              label: 'Sign Out',
+              icon: Icons.logout_rounded,
+              variant: AppButtonVariant.outline,
+              onPressed: () async {
+                await context.read<AuthProvider>().signOut();
+                if (context.mounted) {
+                  Navigator.of(context).pushReplacementNamed('/auth');
+                }
+              },
+            ),
           ),
           const SizedBox(height: 24),
           if (isDesktop)

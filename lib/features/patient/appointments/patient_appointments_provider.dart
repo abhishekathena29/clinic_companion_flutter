@@ -7,23 +7,20 @@ class PatientAppointmentsProvider extends ChangeNotifier {
   }
 
   final AppointmentsRepository _repository;
-  String _patientName = 'You';
 
-  void updatePatientName(String value) {
-    final name = value.trim().isEmpty ? 'You' : value.trim();
-    if (_patientName == name) return;
-    _patientName = name;
-    notifyListeners();
-  }
-
-  List<Appointment> get upcomingAppointments {
+  List<Appointment> upcomingAppointmentsFor(String patientId) {
     final now = DateTime.now();
-    final list = _repository.forPatient(_patientName);
+    final list = _repository.forPatient(patientId);
     list.sort((a, b) => a.date.compareTo(b.date));
-    return list.where((a) => !a.date.isBefore(DateTime(now.year, now.month, now.day))).toList();
+    return list
+        .where((a) => !a.date.isBefore(DateTime(now.year, now.month, now.day)))
+        .toList();
   }
 
-  void bookAppointment({
+  Future<void> bookAppointment({
+    required String patientId,
+    required String patientName,
+    required String doctorId,
     required String doctor,
     required String specialty,
     required String clinic,
@@ -31,8 +28,10 @@ class PatientAppointmentsProvider extends ChangeNotifier {
     required String time,
     required String reason,
   }) {
-    _repository.addAppointment(
-      patient: _patientName,
+    return _repository.addAppointment(
+      patientId: patientId,
+      patient: patientName.trim().isEmpty ? 'You' : patientName.trim(),
+      doctorId: doctorId,
       doctor: doctor,
       specialty: specialty,
       clinic: clinic,

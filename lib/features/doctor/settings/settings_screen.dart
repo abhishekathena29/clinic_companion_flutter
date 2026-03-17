@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../auth/auth_provider.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_decorations.dart';
 import '../../../widgets/app_button.dart';
@@ -50,13 +51,34 @@ class SettingsScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-                const AppButton(
-                  label: 'Save Changes',
-                  icon: Icons.check_circle_rounded,
+                AppButton(
+                  label: 'Sign Out',
+                  icon: Icons.logout_rounded,
+                  variant: AppButtonVariant.outline,
+                  onPressed: () async {
+                    await context.read<AuthProvider>().signOut();
+                    if (context.mounted) {
+                      Navigator.of(context).pushReplacementNamed('/auth');
+                    }
+                  },
                 ),
               ],
             ),
-          const SizedBox(height: 24),
+          if (!isDesktop) ...[
+            AppButton(
+              label: 'Sign Out',
+              icon: Icons.logout_rounded,
+              variant: AppButtonVariant.outline,
+              onPressed: () async {
+                await context.read<AuthProvider>().signOut();
+                if (context.mounted) {
+                  Navigator.of(context).pushReplacementNamed('/auth');
+                }
+              },
+            ),
+            const SizedBox(height: 24),
+          ] else
+            const SizedBox(height: 24),
           if (isDesktop)
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,

@@ -16,7 +16,6 @@ class AuthScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDesktop = _isDesktop(context);
     final provider = context.watch<AuthProvider>();
-    final isDoctor = provider.selectedType == UserType.doctor;
 
     return Scaffold(
       body: Container(
@@ -45,7 +44,7 @@ class AuthScreen extends StatelessWidget {
                             children: [
                               Text(
                                 provider.isLogin
-                                    ? 'Welcome back,\n${isDoctor ? 'Doctor' : 'Patient'}'
+                                    ? 'Welcome back to\nClinic Companion'
                                     : 'Join Clinic\nCompanion',
                                 style: const TextStyle(
                                   color: Colors.white,
@@ -121,11 +120,13 @@ class AuthScreen extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 32),
-                        _UserTypeSelector(
-                          selected: provider.selectedType,
-                          onChanged: provider.updateUserType,
-                        ),
-                        const SizedBox(height: 24),
+                        if (!provider.isLogin) ...[
+                          _UserTypeSelector(
+                            selected: provider.selectedType,
+                            onChanged: provider.updateUserType,
+                          ),
+                          const SizedBox(height: 24),
+                        ],
                         if (!provider.isLogin) ...[
                           TextField(
                             onChanged: provider.updateName,
@@ -214,7 +215,21 @@ class AuthScreen extends StatelessWidget {
                           Align(
                             alignment: Alignment.centerRight,
                             child: TextButton(
-                              onPressed: () {},
+                              onPressed: provider.isLoading
+                                  ? null
+                                  : () async {
+                                      final messenger = ScaffoldMessenger.of(
+                                        context,
+                                      );
+                                      final message = await provider
+                                          .sendPasswordReset();
+                                      if (!context.mounted || message == null) {
+                                        return;
+                                      }
+                                      messenger.showSnackBar(
+                                        SnackBar(content: Text(message)),
+                                      );
+                                    },
                               style: TextButton.styleFrom(
                                 padding: EdgeInsets.zero,
                                 minimumSize: const Size(0, 0),
@@ -230,34 +245,6 @@ class AuthScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 24),
                         ],
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryLight.withOpacity(0.4),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.shield_rounded,
-                                color: AppColors.primary,
-                                size: 20,
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  'Two-factor authentication available for clinic teams.',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: AppColors.primary,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 24),
                         SizedBox(
                           width: double.infinity,
                           child: AppButton(
@@ -272,8 +259,11 @@ class AuthScreen extends StatelessWidget {
                                 ? null
                                 : () async {
                                     await provider.submit();
-                                    if (context.mounted && provider.isAuthenticated) {
-                                      Navigator.of(context).pushReplacementNamed(
+                                    if (context.mounted &&
+                                        provider.isAuthenticated) {
+                                      Navigator.of(
+                                        context,
+                                      ).pushReplacementNamed(
                                         provider.homeRoute,
                                       );
                                     }
@@ -387,10 +377,7 @@ class _BrandChip extends StatelessWidget {
 }
 
 class _UserTypeSelector extends StatelessWidget {
-  const _UserTypeSelector({
-    required this.selected,
-    required this.onChanged,
-  });
+  const _UserTypeSelector({required this.selected, required this.onChanged});
 
   final UserType selected;
   final ValueChanged<UserType> onChanged;
@@ -459,7 +446,9 @@ class _TypeCard extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isActive ? AppColors.primaryLight.withOpacity(0.6) : AppColors.muted,
+          color: isActive
+              ? AppColors.primaryLight.withOpacity(0.6)
+              : AppColors.muted,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isActive ? AppColors.primary : AppColors.border,
@@ -481,10 +470,7 @@ class _TypeCard extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
               title,
-              style: TextStyle(
-                fontWeight: FontWeight.w800,
-                color: color,
-              ),
+              style: TextStyle(fontWeight: FontWeight.w800, color: color),
             ),
             const SizedBox(height: 4),
             Text(

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../../features/auth/auth_provider.dart';
+import '../../../shared/appointments_repository.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_decorations.dart';
 import '../../../widgets/app_button.dart';
@@ -11,12 +13,15 @@ import 'patient_doctors_provider.dart';
 class PatientDoctorsScreen extends StatelessWidget {
   const PatientDoctorsScreen({super.key});
 
-  bool _isDesktop(BuildContext context) => MediaQuery.of(context).size.width >= 768;
+  bool _isDesktop(BuildContext context) =>
+      MediaQuery.of(context).size.width >= 768;
 
   Future<void> _showBookingDialog(
     BuildContext context,
-    DoctorProfile doctor,
-  ) async {
+    DoctorProfile doctor, {
+    required String patientId,
+    required String patientName,
+  }) async {
     DateTime selectedDate = DateTime.now().add(const Duration(days: 1));
     final timeController = TextEditingController(text: '10:30 AM');
     final reasonController = TextEditingController(text: 'Consultation');
@@ -27,7 +32,9 @@ class PatientDoctorsScreen extends StatelessWidget {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+              ),
               title: Text('Book with ${doctor.name}'),
               content: SingleChildScrollView(
                 child: Column(
@@ -54,7 +61,9 @@ class PatientDoctorsScreen extends StatelessWidget {
                           context: dialogContext,
                           initialDate: selectedDate,
                           firstDate: DateTime.now(),
-                          lastDate: DateTime.now().add(const Duration(days: 60)),
+                          lastDate: DateTime.now().add(
+                            const Duration(days: 60),
+                          ),
                         );
                         if (picked != null) {
                           setState(() => selectedDate = picked);
@@ -68,7 +77,10 @@ class PatientDoctorsScreen extends StatelessWidget {
                         child: Align(
                           alignment: Alignment.centerLeft,
                           child: Text(
-                            DateFormat('d MMM yyyy', 'en_IN').format(selectedDate),
+                            DateFormat(
+                              'd MMM yyyy',
+                              'en_IN',
+                            ).format(selectedDate),
                             style: const TextStyle(fontWeight: FontWeight.w600),
                           ),
                         ),
@@ -77,23 +89,32 @@ class PatientDoctorsScreen extends StatelessWidget {
                   ],
                 ),
               ),
-              actionsPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              actionsPadding: const EdgeInsets.symmetric(
+                horizontal: 24,
+                vertical: 16,
+              ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(dialogContext).pop(),
-                  child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.bold)),
+                  child: const Text(
+                    'Cancel',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                 ),
                 AppButton(
                   label: 'Request Slot',
                   onPressed: () {
                     context.read<PatientAppointmentsProvider>().bookAppointment(
-                          doctor: doctor.name,
-                          specialty: doctor.specialty,
-                          clinic: doctor.clinic,
-                          date: selectedDate,
-                          time: timeController.text.trim(),
-                          reason: reasonController.text.trim(),
-                        );
+                      patientId: patientId,
+                      patientName: patientName,
+                      doctorId: doctor.id,
+                      doctor: doctor.name,
+                      specialty: doctor.specialty,
+                      clinic: doctor.clinic,
+                      date: selectedDate,
+                      time: timeController.text.trim(),
+                      reason: reasonController.text.trim(),
+                    );
                     Navigator.of(dialogContext).pop();
                   },
                 ),
@@ -108,7 +129,13 @@ class PatientDoctorsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDesktop = _isDesktop(context);
+    final auth = context.watch<AuthProvider>();
     final provider = context.watch<PatientDoctorsProvider>();
+    final patient = context.read<AppointmentsRepository>().patientForUser(
+      auth.user?.uid,
+    );
+    final patientId = patient?.id ?? auth.user?.uid ?? '';
+    final patientName = auth.profileName;
     final doctors = provider.doctors;
 
     return PatientLayout(
@@ -136,7 +163,12 @@ class PatientDoctorsScreen extends StatelessWidget {
             children: doctors.map((doctor) {
               return _DoctorCard(
                 doctor: doctor,
-                onBook: () => _showBookingDialog(context, doctor),
+                onBook: () => _showBookingDialog(
+                  context,
+                  doctor,
+                  patientId: patientId,
+                  patientName: patientName,
+                ),
               );
             }).toList(),
           ),
@@ -182,33 +214,52 @@ class _DoctorCard extends StatelessWidget {
               children: [
                 Text(
                   doctor.name,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   '${doctor.specialty} • ${doctor.experienceYears} yrs exp',
-                  style: TextStyle(color: AppColors.mutedForeground, fontSize: 13),
+                  style: TextStyle(
+                    color: AppColors.mutedForeground,
+                    fontSize: 13,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    Icon(Icons.star_rounded, size: 16, color: AppColors.warning),
+                    Icon(
+                      Icons.star_rounded,
+                      size: 16,
+                      color: AppColors.warning,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       doctor.rating.toStringAsFixed(1),
-                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12,
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Text(
                       doctor.clinic,
-                      style: TextStyle(color: AppColors.mutedForeground, fontSize: 12),
+                      style: TextStyle(
+                        color: AppColors.mutedForeground,
+                        fontSize: 12,
+                      ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 6),
                 Text(
                   '${doctor.location} • ₹${doctor.fee}',
-                  style: TextStyle(color: AppColors.mutedForeground, fontSize: 12),
+                  style: TextStyle(
+                    color: AppColors.mutedForeground,
+                    fontSize: 12,
+                  ),
                 ),
               ],
             ),

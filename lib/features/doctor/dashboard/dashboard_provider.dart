@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+
+import '../../../shared/appointments_repository.dart';
 import '../../../widgets/stat_card.dart';
 
 class DashboardStat {
@@ -21,7 +23,11 @@ class DashboardStat {
 }
 
 class DashboardProvider extends ChangeNotifier {
-  final String doctorName = 'Dr. Kumar';
+  DashboardProvider(this._repository) {
+    _repository.addListener(_handleRepositoryUpdate);
+  }
+
+  final AppointmentsRepository _repository;
 
   String get greeting {
     final hour = DateTime.now().hour;
@@ -30,41 +36,84 @@ class DashboardProvider extends ChangeNotifier {
     return 'Good Evening';
   }
 
-  String get today => DateFormat('EEEE, d MMMM yyyy', 'en_IN').format(DateTime.now());
-  String get shortDate => DateFormat('EEE, d MMM', 'en_IN').format(DateTime.now());
+  String get today =>
+      DateFormat('EEEE, d MMMM yyyy', 'en_IN').format(DateTime.now());
+  String get shortDate =>
+      DateFormat('EEE, d MMM', 'en_IN').format(DateTime.now());
 
-  List<DashboardStat> get stats => const [
-        DashboardStat(
-          title: "Today's Patients",
-          value: '24',
-          change: '+3 from yesterday',
-          changeType: StatChangeType.positive,
-          icon: Icons.people,
-          variant: StatVariant.primary,
-        ),
-        DashboardStat(
-          title: 'Appointments',
-          value: '18',
-          change: '4 remaining today',
-          changeType: StatChangeType.neutral,
-          icon: Icons.calendar_today,
-          variant: StatVariant.info,
-        ),
-        DashboardStat(
-          title: 'Avg. Wait Time',
-          value: '18 min',
-          change: 'down 5 min from last week',
-          changeType: StatChangeType.positive,
-          icon: Icons.access_time,
-          variant: StatVariant.success,
-        ),
-        DashboardStat(
-          title: 'Pending Follow-ups',
-          value: '7',
-          change: '3 overdue',
-          changeType: StatChangeType.negative,
-          icon: Icons.warning_amber,
-          variant: StatVariant.warning,
-        ),
-      ];
+  List<DashboardStat> statsForDoctor(String doctorId) {
+    final doctorAppointments = _repository.forDoctor(doctorId);
+    final doctorQueue = _repository.queueForDoctor(doctorId);
+    final todayStart = DateTime.now();
+    final todayAppointments = doctorAppointments.where((appointment) {
+      return appointment.date.year == todayStart.year &&
+          appointment.date.month == todayStart.month &&
+          appointment.date.day == todayStart.day;
+    }).toList();
+    final patientIds = doctorAppointments
+        .map((appointment) => appointment.patientId)
+        .where((value) => value.isNotEmpty)
+        .toSet();
+    final waitingEntries = doctorQueue
+        .where((entry) => entry.status == QueueStatus.waiting)
+        .toList();
+    final pendingFollowUps = doctorAppointments
+        .where((appointment) => appointment.status.toLowerCase() == 'pending')
+        .length;
+    final averageWait = waitingEntries.isEmpty
+        ? 0
+        : (waitingEntries.fold<int>(0, (sum, entry) => sum + entry.waitTime) /
+                  waitingEntries.length)
+              .round();
+
+    return [
+      DashboardStat(
+        title: "Today's Patients",
+        value: '${todayAppointments.length}',
+        change: '${patientIds.length} active patients',
+        changeType: StatChangeType.positive,
+        icon: Icons.people,
+        variant: StatVariant.primary,
+      ),
+      DashboardStat(
+        title: 'Appointments',
+        value: '${todayAppointments.length}',
+        change:
+            '${todayAppointments.where((item) => item.status == 'Pending').length} pending today',
+        changeType: StatChangeType.neutral,
+        icon: Icons.calendar_today,
+        variant: StatVariant.info,
+      ),
+      DashboardStat(
+        title: 'Avg. Wait Time',
+        value: '$averageWait min',
+        change: '${waitingEntries.length} patients in queue',
+        changeType: averageWait <= 15
+            ? StatChangeType.positive
+            : StatChangeType.neutral,
+        icon: Icons.access_time,
+        variant: StatVariant.success,
+      ),
+      DashboardStat(
+        title: 'Pending Follow-ups',
+        value: '$pendingFollowUps',
+        change: '${doctorAppointments.length} total scheduled',
+        changeType: pendingFollowUps > 0
+            ? StatChangeType.negative
+            : StatChangeType.positive,
+        icon: Icons.warning_amber,
+        variant: StatVariant.warning,
+      ),
+    ];
+  }
+
+  void _handleRepositoryUpdate() {
+    notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _repository.removeListener(_handleRepositoryUpdate);
+    super.dispose();
+  }
 }

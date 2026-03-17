@@ -7,7 +7,6 @@ class PatientDashboardProvider extends ChangeNotifier {
   }
 
   final AppointmentsRepository _repository;
-  String _patientName = 'You';
 
   String get greeting {
     final hour = DateTime.now().hour;
@@ -16,20 +15,13 @@ class PatientDashboardProvider extends ChangeNotifier {
     return 'Good evening';
   }
 
-  String get patientName => _patientName;
-
-  void updatePatientName(String value) {
-    final name = value.trim().isEmpty ? 'You' : value.trim();
-    if (_patientName == name) return;
-    _patientName = name;
-    notifyListeners();
-  }
-
-  List<Appointment> get upcomingAppointments {
+  List<Appointment> upcomingAppointmentsFor(String patientId) {
     final now = DateTime.now();
-    final list = _repository.forPatient(_patientName);
+    final list = _repository.forPatient(patientId);
     list.sort((a, b) => a.date.compareTo(b.date));
-    return list.where((a) => !a.date.isBefore(DateTime(now.year, now.month, now.day))).toList();
+    return list
+        .where((a) => !a.date.isBefore(DateTime(now.year, now.month, now.day)))
+        .toList();
   }
 
   void _handleRepositoryUpdate() {

@@ -46,7 +46,8 @@ class AuthProvider extends ChangeNotifier {
   User? get user => _user;
   UserType get selectedType => _selectedType;
   UserType? get userType => _userType;
-  String get profileName => _profileName.isEmpty ? (_user?.displayName ?? '') : _profileName;
+  String get profileName =>
+      _profileName.isEmpty ? (_user?.displayName ?? '') : _profileName;
   bool get isAuthenticated => _user != null;
 
   String get name => _name;
@@ -55,7 +56,8 @@ class AuthProvider extends ChangeNotifier {
   String get confirmPassword => _confirmPassword;
 
   UserType get effectiveUserType => _userType ?? _selectedType;
-  String get homeRoute => effectiveUserType == UserType.doctor ? '/doctor' : '/patient';
+  String get homeRoute =>
+      effectiveUserType == UserType.doctor ? '/doctor' : '/patient';
 
   @override
   void dispose() {
@@ -122,7 +124,10 @@ class AuthProvider extends ChangeNotifier {
 
     _setLoading(true);
     try {
-      final result = await _auth.signInWithEmailAndPassword(email: _email, password: _password);
+      final result = await _auth.signInWithEmailAndPassword(
+        email: _email,
+        password: _password,
+      );
       await _loadUserProfile(result.user);
     } on FirebaseAuthException catch (e) {
       _error = e.message ?? 'Unable to sign in. Please try again.';
@@ -156,18 +161,48 @@ class AuthProvider extends ChangeNotifier {
 
     _setLoading(true);
     try {
-      final result = await _auth.createUserWithEmailAndPassword(email: _email, password: _password);
+      final result = await _auth.createUserWithEmailAndPassword(
+        email: _email,
+        password: _password,
+      );
       await result.user?.updateDisplayName(_name.trim());
-      await _firestore.collection('users').doc(result.user?.uid).set(
-        {
-          'uid': result.user?.uid,
+      final userId = result.user?.uid;
+      await _firestore.collection('users').doc(userId).set({
+        'uid': userId,
+        'name': _name.trim(),
+        'email': _email,
+        'userType': _selectedType.value,
+        'specialty': _selectedType == UserType.doctor
+            ? 'General Medicine'
+            : null,
+        'clinic': _selectedType == UserType.doctor ? 'Clinic Companion' : null,
+        'location': 'Bengaluru',
+        'fee': _selectedType == UserType.doctor ? 500 : null,
+        'experienceYears': _selectedType == UserType.doctor ? 5 : null,
+        'rating': _selectedType == UserType.doctor ? 4.8 : null,
+        'nextAvailable': _selectedType == UserType.doctor
+            ? 'Today, 5:00 PM'
+            : null,
+        'createdAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+      if (_selectedType == UserType.patient && userId != null) {
+        await _firestore.collection('patients').doc(userId).set({
+          'userId': userId,
+          'patientCode':
+              'SV-${DateTime.now().year}-${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}',
           'name': _name.trim(),
           'email': _email,
-          'userType': _selectedType.value,
+          'phone': '',
+          'age': 0,
+          'gender': 'O',
+          'conditions': const <String>[],
+          'status': 'active',
+          'totalVisits': 0,
+          'lastVisit': '',
           'createdAt': FieldValue.serverTimestamp(),
-        },
-        SetOptions(merge: true),
-      );
+          'updatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+      }
       await _loadUserProfile(result.user);
     } on FirebaseAuthException catch (e) {
       _error = e.message ?? 'Unable to create account. Please try again.';
@@ -180,6 +215,27 @@ class AuthProvider extends ChangeNotifier {
     await _auth.signOut();
     _userType = null;
     _profileName = '';
+  }
+
+  Future<String?> sendPasswordReset() async {
+    _error = null;
+    if (_email.isEmpty) {
+      _error = 'Enter your email address first.';
+      notifyListeners();
+      return null;
+    }
+
+    _setLoading(true);
+    try {
+      await _auth.sendPasswordResetEmail(email: _email);
+      return 'Password reset email sent to $_email.';
+    } on FirebaseAuthException catch (e) {
+      _error = e.message ?? 'Unable to send password reset email.';
+      notifyListeners();
+      return null;
+    } finally {
+      _setLoading(false);
+    }
   }
 
   Future<void> _loadUserProfile(User? user) async {
@@ -199,10 +255,9 @@ class AuthProvider extends ChangeNotifier {
       }
 
       if (_userType != null && (doc.data()?['userType'] == null)) {
-        await _firestore.collection('users').doc(user.uid).set(
-          {'userType': _userType!.value},
-          SetOptions(merge: true),
-        );
+        await _firestore.collection('users').doc(user.uid).set({
+          'userType': _userType!.value,
+        }, SetOptions(merge: true));
       }
     } catch (_) {
       _userType = _selectedType;

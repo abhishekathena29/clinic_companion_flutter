@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../theme/app_colors.dart';
+import 'floating_bottom_nav.dart';
 
 class MobileNav extends StatelessWidget {
   const MobileNav({super.key, required this.currentRoute});
@@ -8,66 +8,30 @@ class MobileNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final items = [
-      _NavItem('Home', Icons.dashboard, '/doctor'),
-      _NavItem('Patients', Icons.people, '/doctor/patients'),
-      _NavItem('Queue', Icons.list_alt, '/doctor/queue'),
-      _NavItem('Schedule', Icons.calendar_today, '/doctor/appointments'),
-      _NavItem('More', Icons.menu, '/doctor/settings'),
+    const items = [
+      BottomNavItemData(label: 'Home', icon: Icons.dashboard, route: '/doctor'),
+      BottomNavItemData(
+        label: 'Patients',
+        icon: Icons.people,
+        route: '/doctor/patients',
+      ),
+      BottomNavItemData(
+        label: 'Queue',
+        icon: Icons.list_alt,
+        route: '/doctor/queue',
+      ),
+      BottomNavItemData(
+        label: 'Schedule',
+        icon: Icons.calendar_today,
+        route: '/doctor/appointments',
+      ),
+      BottomNavItemData(
+        label: 'Settings',
+        icon: Icons.settings_rounded,
+        route: '/doctor/settings',
+      ),
     ];
 
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.card,
-        border: Border(top: BorderSide(color: AppColors.border)),
-      ),
-      child: SafeArea(
-        top: false,
-        child: SizedBox(
-          height: 64,
-          child: Row(
-            children: items.map((item) {
-              final isActive = currentRoute == item.route;
-              return Expanded(
-                child: InkWell(
-                  onTap: () {
-                    if (currentRoute != item.route) {
-                      Navigator.of(context).pushReplacementNamed(item.route);
-                    }
-                  },
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        item.icon,
-                        size: isActive ? 22 : 20,
-                        color: isActive ? AppColors.primary : AppColors.mutedForeground,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        item.label,
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-                          color: isActive ? AppColors.primary : AppColors.mutedForeground,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-        ),
-      ),
-    );
+    return FloatingBottomNav(currentRoute: currentRoute, items: items);
   }
-}
-
-class _NavItem {
-  _NavItem(this.label, this.icon, this.route);
-
-  final String label;
-  final IconData icon;
-  final String route;
 }

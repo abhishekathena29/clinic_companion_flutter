@@ -13,10 +13,16 @@ import 'patient_appointments_provider.dart';
 class PatientAppointmentsScreen extends StatelessWidget {
   const PatientAppointmentsScreen({super.key});
 
-  bool _isDesktop(BuildContext context) => MediaQuery.of(context).size.width >= 768;
+  bool _isDesktop(BuildContext context) =>
+      MediaQuery.of(context).size.width >= 768;
 
-  Future<void> _showBookingDialog(BuildContext context) async {
+  Future<void> _showBookingDialog(
+    BuildContext context, {
+    required String patientId,
+    required String patientName,
+  }) async {
     final doctors = context.read<PatientDoctorsProvider>().doctors;
+    if (doctors.isEmpty) return;
     DoctorProfile selected = doctors.first;
     DateTime selectedDate = DateTime.now().add(const Duration(days: 1));
     final timeController = TextEditingController(text: '10:30 AM');
@@ -28,7 +34,9 @@ class PatientAppointmentsScreen extends StatelessWidget {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+              ),
               title: const Text('Request Appointment'),
               content: SingleChildScrollView(
                 child: Column(
@@ -43,7 +51,9 @@ class PatientAppointmentsScreen extends StatelessWidget {
                           .map(
                             (doctor) => DropdownMenuItem(
                               value: doctor,
-                              child: Text('${doctor.name} • ${doctor.specialty}'),
+                              child: Text(
+                                '${doctor.name} • ${doctor.specialty}',
+                              ),
                             ),
                           )
                           .toList(),
@@ -75,7 +85,9 @@ class PatientAppointmentsScreen extends StatelessWidget {
                           context: dialogContext,
                           initialDate: selectedDate,
                           firstDate: DateTime.now(),
-                          lastDate: DateTime.now().add(const Duration(days: 60)),
+                          lastDate: DateTime.now().add(
+                            const Duration(days: 60),
+                          ),
                         );
                         if (picked != null) {
                           setState(() => selectedDate = picked);
@@ -89,7 +101,10 @@ class PatientAppointmentsScreen extends StatelessWidget {
                         child: Align(
                           alignment: Alignment.centerLeft,
                           child: Text(
-                            DateFormat('d MMM yyyy', 'en_IN').format(selectedDate),
+                            DateFormat(
+                              'd MMM yyyy',
+                              'en_IN',
+                            ).format(selectedDate),
                             style: const TextStyle(fontWeight: FontWeight.w600),
                           ),
                         ),
@@ -98,23 +113,32 @@ class PatientAppointmentsScreen extends StatelessWidget {
                   ],
                 ),
               ),
-              actionsPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              actionsPadding: const EdgeInsets.symmetric(
+                horizontal: 24,
+                vertical: 16,
+              ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(dialogContext).pop(),
-                  child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.bold)),
+                  child: const Text(
+                    'Cancel',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                 ),
                 AppButton(
                   label: 'Request',
                   onPressed: () {
                     context.read<PatientAppointmentsProvider>().bookAppointment(
-                          doctor: selected.name,
-                          specialty: selected.specialty,
-                          clinic: selected.clinic,
-                          date: selectedDate,
-                          time: timeController.text.trim(),
-                          reason: reasonController.text.trim(),
-                        );
+                      patientId: patientId,
+                      patientName: patientName,
+                      doctorId: selected.id,
+                      doctor: selected.name,
+                      specialty: selected.specialty,
+                      clinic: selected.clinic,
+                      date: selectedDate,
+                      time: timeController.text.trim(),
+                      reason: reasonController.text.trim(),
+                    );
                     Navigator.of(dialogContext).pop();
                   },
                 ),
@@ -131,9 +155,13 @@ class PatientAppointmentsScreen extends StatelessWidget {
     final isDesktop = _isDesktop(context);
     final auth = context.watch<AuthProvider>();
     final provider = context.watch<PatientAppointmentsProvider>();
-    provider.updatePatientName(auth.profileName);
+    final patient = context.read<AppointmentsRepository>().patientForUser(
+      auth.user?.uid,
+    );
+    final patientId = patient?.id ?? auth.user?.uid ?? '';
+    final patientName = auth.profileName;
 
-    final appointments = provider.upcomingAppointments;
+    final appointments = provider.upcomingAppointmentsFor(patientId);
 
     return PatientLayout(
       routeName: '/patient/appointments',
@@ -150,7 +178,11 @@ class PatientAppointmentsScreen extends StatelessWidget {
               AppButton(
                 label: 'Request Slot',
                 icon: Icons.add_rounded,
-                onPressed: () => _showBookingDialog(context),
+                onPressed: () => _showBookingDialog(
+                  context,
+                  patientId: patientId,
+                  patientName: patientName,
+                ),
               ),
             ],
           ),
@@ -166,15 +198,20 @@ class PatientAppointmentsScreen extends StatelessWidget {
               decoration: AppDecorations.card(),
               child: Row(
                 children: [
-                  Icon(Icons.event_busy_rounded, color: AppColors.mutedForeground),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Text('No appointment requests yet.'),
+                  Icon(
+                    Icons.event_busy_rounded,
+                    color: AppColors.mutedForeground,
                   ),
+                  const SizedBox(width: 12),
+                  const Expanded(child: Text('No appointment requests yet.')),
                   AppButton(
                     label: 'Book',
                     size: AppButtonSize.small,
-                    onPressed: () => _showBookingDialog(context),
+                    onPressed: () => _showBookingDialog(
+                      context,
+                      patientId: patientId,
+                      patientName: patientName,
+                    ),
                   ),
                 ],
               ),
@@ -213,11 +250,14 @@ class _AppointmentTile extends StatelessWidget {
             width: 56,
             height: 56,
             decoration: BoxDecoration(
-              color: AppColors.primaryLight.withOpacity(0.4),
+              color: AppColors.primaryLight.withValues(alpha: 0.4),
               borderRadius: BorderRadius.circular(16),
             ),
             alignment: Alignment.center,
-            child: Icon(Icons.medical_services_rounded, color: AppColors.primary),
+            child: Icon(
+              Icons.medical_services_rounded,
+              color: AppColors.primary,
+            ),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -226,12 +266,18 @@ class _AppointmentTile extends StatelessWidget {
               children: [
                 Text(
                   appointment.doctor,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   '${appointment.specialty} • ${appointment.clinic}',
-                  style: TextStyle(color: AppColors.mutedForeground, fontSize: 12),
+                  style: TextStyle(
+                    color: AppColors.mutedForeground,
+                    fontSize: 12,
+                  ),
                 ),
                 const SizedBox(height: 10),
                 Text(
@@ -241,7 +287,10 @@ class _AppointmentTile extends StatelessWidget {
                 const SizedBox(height: 6),
                 Text(
                   appointment.type,
-                  style: TextStyle(color: AppColors.mutedForeground, fontSize: 12),
+                  style: TextStyle(
+                    color: AppColors.mutedForeground,
+                    fontSize: 12,
+                  ),
                 ),
               ],
             ),

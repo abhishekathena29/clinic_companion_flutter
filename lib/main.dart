@@ -3,7 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
-import 'theme/app_theme.dart';
+
 import 'features/auth/auth_provider.dart';
 import 'features/auth/auth_screen.dart';
 import 'features/common/not_found_screen.dart';
@@ -27,6 +27,7 @@ import 'features/patient/doctors/patient_doctors_provider.dart';
 import 'features/patient/doctors/patient_doctors_screen.dart';
 import 'features/patient/settings/patient_settings_provider.dart';
 import 'features/patient/settings/patient_settings_screen.dart';
+import 'theme/app_theme.dart';
 import 'shared/appointments_repository.dart';
 
 Future<void> main() async {
@@ -46,20 +47,41 @@ class ClinicCompanionApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => OnboardingProvider()),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => AppointmentsRepository()),
-        ChangeNotifierProvider(create: (_) => DashboardProvider()),
-        ChangeNotifierProvider(create: (_) => PatientsProvider()),
-        ChangeNotifierProvider(create: (_) => QueueProvider()),
+        ChangeNotifierProxyProvider<AppointmentsRepository, DashboardProvider>(
+          create: (context) =>
+              DashboardProvider(context.read<AppointmentsRepository>()),
+          update: (context, repository, previous) =>
+              previous ?? DashboardProvider(repository),
+        ),
+        ChangeNotifierProxyProvider<AppointmentsRepository, PatientsProvider>(
+          create: (context) =>
+              PatientsProvider(context.read<AppointmentsRepository>()),
+          update: (context, repository, previous) =>
+              previous ?? PatientsProvider(repository),
+        ),
+        ChangeNotifierProxyProvider<AppointmentsRepository, QueueProvider>(
+          create: (context) =>
+              QueueProvider(context.read<AppointmentsRepository>()),
+          update: (context, repository, previous) =>
+              previous ?? QueueProvider(repository),
+        ),
         ChangeNotifierProvider(
-          create: (context) => ScheduleProvider(context.read<AppointmentsRepository>()),
+          create: (context) =>
+              ScheduleProvider(context.read<AppointmentsRepository>()),
         ),
         ChangeNotifierProvider(create: (_) => SettingsProvider()),
         ChangeNotifierProvider(
-          create: (context) => PatientDashboardProvider(context.read<AppointmentsRepository>()),
+          create: (context) =>
+              PatientDashboardProvider(context.read<AppointmentsRepository>()),
         ),
-        ChangeNotifierProvider(create: (_) => PatientDoctorsProvider()),
         ChangeNotifierProvider(
           create: (context) =>
-              PatientAppointmentsProvider(context.read<AppointmentsRepository>()),
+              PatientDoctorsProvider(context.read<AppointmentsRepository>()),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => PatientAppointmentsProvider(
+            context.read<AppointmentsRepository>(),
+          ),
         ),
         ChangeNotifierProvider(create: (_) => PatientSettingsProvider()),
       ],
@@ -67,8 +89,9 @@ class ClinicCompanionApp extends StatelessWidget {
         title: 'Clinic Companion',
         theme: AppTheme.light(),
         debugShowCheckedModeBanner: false,
-        initialRoute: '/onboarding',
+        // home: const _AuthGate(),
         routes: {
+          '/': (context) => const _AuthGate(),
           '/onboarding': (context) => const OnboardingScreen(),
           '/auth': (context) => const AuthScreen(),
           '/doctor': (context) => const DashboardScreen(),
@@ -78,7 +101,8 @@ class ClinicCompanionApp extends StatelessWidget {
           '/doctor/settings': (context) => const SettingsScreen(),
           '/patient': (context) => const PatientDashboardScreen(),
           '/patient/doctors': (context) => const PatientDoctorsScreen(),
-          '/patient/appointments': (context) => const PatientAppointmentsScreen(),
+          '/patient/appointments': (context) =>
+              const PatientAppointmentsScreen(),
           '/patient/settings': (context) => const PatientSettingsScreen(),
         },
         onUnknownRoute: (settings) => MaterialPageRoute(
@@ -87,5 +111,26 @@ class ClinicCompanionApp extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _AuthGate extends StatelessWidget {
+  const _AuthGate();
+
+  @override
+  Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
+
+    if (!auth.isAuthenticated) {
+      return const OnboardingScreen();
+    }
+
+    if (auth.userType == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    return auth.homeRoute == '/doctor'
+        ? const DashboardScreen()
+        : const PatientDashboardScreen();
   }
 }

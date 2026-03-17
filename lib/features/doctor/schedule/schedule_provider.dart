@@ -12,20 +12,25 @@ class ScheduleProvider extends ChangeNotifier {
   DateTime get selectedDate => _selectedDate;
 
   List<DateTime> get upcomingDays => List.generate(7, (index) {
-        final base = DateTime.now();
-        return DateTime(base.year, base.month, base.day + index);
-      });
+    final base = DateTime.now();
+    return DateTime(base.year, base.month, base.day + index);
+  });
 
   void selectDate(DateTime date) {
     _selectedDate = date;
     notifyListeners();
   }
 
-  List<Appointment> get appointmentsForSelectedDate {
-    return _repository.forDate(_selectedDate);
+  List<Appointment> appointmentsForDate(String doctorId) {
+    return _repository.forDate(_selectedDate, doctorId: doctorId);
   }
 
-  void addAppointment({
+  Future<void> addAppointment({
+    required String doctorId,
+    required String doctorName,
+    required String specialty,
+    required String clinic,
+    required String patientId,
     required String patient,
     required DateTime date,
     required String time,
@@ -33,11 +38,13 @@ class ScheduleProvider extends ChangeNotifier {
     required String duration,
     String status = 'Pending',
   }) {
-    _repository.addAppointment(
+    return _repository.addAppointment(
+      patientId: patientId,
       patient: patient,
-      doctor: 'Dr. Rajesh Mehra',
-      specialty: 'Cardiology',
-      clinic: 'City Care Clinic',
+      doctorId: doctorId,
+      doctor: doctorName,
+      specialty: specialty,
+      clinic: clinic,
       date: date,
       time: time,
       type: type,

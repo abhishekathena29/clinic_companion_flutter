@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../features/auth/auth_provider.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_decorations.dart';
 import '../../../widgets/app_button.dart';
@@ -11,7 +12,8 @@ import 'queue_provider.dart';
 class QueueScreen extends StatelessWidget {
   const QueueScreen({super.key});
 
-  bool _isDesktop(BuildContext context) => MediaQuery.of(context).size.width >= 768;
+  bool _isDesktop(BuildContext context) =>
+      MediaQuery.of(context).size.width >= 768;
 
   Future<void> _showAddToQueueDialog(BuildContext context) async {
     final patients = context.read<PatientsProvider>().patients;
@@ -36,10 +38,14 @@ class QueueScreen extends StatelessWidget {
                       value: selectedPatient,
                       decoration: const InputDecoration(labelText: 'Patient'),
                       items: patients
-                          .map((patient) => DropdownMenuItem(
-                                value: patient,
-                                child: Text('${patient.name} • ${patient.patientId}'),
-                              ))
+                          .map(
+                            (patient) => DropdownMenuItem(
+                              value: patient,
+                              child: Text(
+                                '${patient.name} • ${patient.patientId}',
+                              ),
+                            ),
+                          )
                           .toList(),
                       onChanged: (value) {
                         if (value == null) return;
@@ -49,15 +55,23 @@ class QueueScreen extends StatelessWidget {
                     const SizedBox(height: 12),
                     TextField(
                       controller: reasonController,
-                      decoration: const InputDecoration(labelText: 'Reason for visit'),
+                      decoration: const InputDecoration(
+                        labelText: 'Reason for visit',
+                      ),
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<QueuePriority>(
                       value: priority,
                       decoration: const InputDecoration(labelText: 'Priority'),
                       items: const [
-                        DropdownMenuItem(value: QueuePriority.normal, child: Text('Normal')),
-                        DropdownMenuItem(value: QueuePriority.urgent, child: Text('Urgent')),
+                        DropdownMenuItem(
+                          value: QueuePriority.normal,
+                          child: Text('Normal'),
+                        ),
+                        DropdownMenuItem(
+                          value: QueuePriority.urgent,
+                          child: Text('Urgent'),
+                        ),
                       ],
                       onChanged: (value) {
                         if (value == null) return;
@@ -68,7 +82,9 @@ class QueueScreen extends StatelessWidget {
                     TextField(
                       controller: waitController,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'Estimated wait (min)'),
+                      decoration: const InputDecoration(
+                        labelText: 'Estimated wait (min)',
+                      ),
                     ),
                   ],
                 ),
@@ -85,13 +101,14 @@ class QueueScreen extends StatelessWidget {
                         : reasonController.text.trim();
                     final wait = int.tryParse(waitController.text.trim());
                     context.read<QueueProvider>().addToQueue(
-                          patientName: selectedPatient.name,
-                          patientId: selectedPatient.patientId,
-                          phone: selectedPatient.phone,
-                          reason: reason,
-                          priority: priority,
-                          waitTime: wait,
-                        );
+                      doctorId: context.read<AuthProvider>().user?.uid ?? '',
+                      patientName: selectedPatient.name,
+                      patientId: selectedPatient.patientId,
+                      phone: selectedPatient.phone,
+                      reason: reason,
+                      priority: priority,
+                      waitTime: wait,
+                    );
                     Navigator.of(dialogContext).pop();
                   },
                   child: const Text('Add to queue'),
@@ -107,11 +124,13 @@ class QueueScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<QueueProvider>();
-    final queue = provider.queue;
-    final waitingCount = provider.waitingCount;
-    final inConsultationCount = provider.inConsultationCount;
-    final completedCount = provider.completedCount;
-    final avgWait = provider.averageWait;
+    final auth = context.watch<AuthProvider>();
+    final doctorId = auth.user?.uid ?? '';
+    final queue = provider.queueForDoctor(doctorId);
+    final waitingCount = provider.waitingCountFor(doctorId);
+    final inConsultationCount = provider.inConsultationCountFor(doctorId);
+    final completedCount = provider.completedCountFor(doctorId);
+    final avgWait = provider.averageWaitFor(doctorId);
 
     final isDesktop = _isDesktop(context);
 
@@ -128,7 +147,13 @@ class QueueScreen extends StatelessWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Queue Management', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                    const Text(
+                      'Queue Management',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     const SizedBox(height: 6),
                     Text(
                       "Today's patient queue and check-ins",
@@ -148,7 +173,10 @@ class QueueScreen extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text("Today's Queue", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                const Text(
+                  "Today's Queue",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                ),
                 AppButton(
                   label: 'Check-in',
                   icon: Icons.add,
@@ -167,10 +195,30 @@ class QueueScreen extends StatelessWidget {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             children: [
-              _statTile(Icons.access_time, waitingCount.toString(), 'Waiting', AppColors.warning),
-              _statTile(Icons.person, inConsultationCount.toString(), 'Consulting', AppColors.info),
-              _statTile(Icons.check_circle, completedCount.toString(), 'Done', AppColors.success),
-              _statTile(Icons.access_time, '${avgWait}m', 'Avg. Wait', AppColors.primary),
+              _statTile(
+                Icons.access_time,
+                waitingCount.toString(),
+                'Waiting',
+                AppColors.warning,
+              ),
+              _statTile(
+                Icons.person,
+                inConsultationCount.toString(),
+                'Consulting',
+                AppColors.info,
+              ),
+              _statTile(
+                Icons.check_circle,
+                completedCount.toString(),
+                'Done',
+                AppColors.success,
+              ),
+              _statTile(
+                Icons.access_time,
+                '${avgWait}m',
+                'Avg. Wait',
+                AppColors.primary,
+              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -194,8 +242,8 @@ class QueueScreen extends StatelessWidget {
                           color: patient.status == QueueStatus.inConsultation
                               ? AppColors.info
                               : isUrgent
-                                  ? AppColors.destructive
-                                  : AppColors.muted,
+                              ? AppColors.destructive
+                              : AppColors.muted,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         alignment: Alignment.center,
@@ -204,7 +252,9 @@ class QueueScreen extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: patient.status == QueueStatus.inConsultation || isUrgent
+                            color:
+                                patient.status == QueueStatus.inConsultation ||
+                                    isUrgent
                                 ? Colors.white
                                 : AppColors.mutedForeground,
                           ),
@@ -219,19 +269,29 @@ class QueueScreen extends StatelessWidget {
                               children: [
                                 Text(
                                   patient.patientName,
-                                  style: const TextStyle(fontWeight: FontWeight.w600),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                                 if (isUrgent) ...[
                                   const SizedBox(width: 6),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
                                     decoration: BoxDecoration(
-                                      color: AppColors.destructive.withOpacity(0.15),
+                                      color: AppColors.destructive.withOpacity(
+                                        0.15,
+                                      ),
                                       borderRadius: BorderRadius.circular(999),
                                     ),
                                     child: Text(
                                       'Urgent',
-                                      style: TextStyle(fontSize: 11, color: AppColors.destructive),
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: AppColors.destructive,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -240,32 +300,49 @@ class QueueScreen extends StatelessWidget {
                             const SizedBox(height: 4),
                             Text(
                               patient.reason,
-                              style: TextStyle(fontSize: 12, color: AppColors.mutedForeground),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.mutedForeground,
+                              ),
                             ),
                             const SizedBox(height: 10),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: statusStyle.background,
                                     borderRadius: BorderRadius.circular(999),
-                                    border: Border.all(color: statusStyle.border),
+                                    border: Border.all(
+                                      color: statusStyle.border,
+                                    ),
                                   ),
                                   child: Row(
                                     children: [
-                                      Icon(statusStyle.icon, size: 12, color: statusStyle.foreground),
+                                      Icon(
+                                        statusStyle.icon,
+                                        size: 12,
+                                        color: statusStyle.foreground,
+                                      ),
                                       const SizedBox(width: 4),
                                       Text(
                                         statusStyle.label,
-                                        style: TextStyle(fontSize: 11, color: statusStyle.foreground),
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: statusStyle.foreground,
+                                        ),
                                       ),
                                     ],
                                   ),
                                 ),
                                 Text(
-                                  patient.waitTime > 0 ? "${patient.waitTime}m wait" : 'Just in',
+                                  patient.waitTime > 0
+                                      ? "${patient.waitTime}m wait"
+                                      : 'Just in',
                                   style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,
@@ -283,15 +360,22 @@ class QueueScreen extends StatelessWidget {
                                       label: 'Start Consultation',
                                       icon: Icons.play_arrow,
                                       size: AppButtonSize.small,
+                                      onPressed: () => context
+                                          .read<QueueProvider>()
+                                          .startConsultation(patient.id),
                                     ),
                                   ),
-                                if (patient.status == QueueStatus.inConsultation)
+                                if (patient.status ==
+                                    QueueStatus.inConsultation)
                                   Expanded(
                                     child: AppButton(
                                       label: 'Complete',
                                       icon: Icons.check_circle,
                                       size: AppButtonSize.small,
                                       variant: AppButtonVariant.outline,
+                                      onPressed: () => context
+                                          .read<QueueProvider>()
+                                          .completeConsultation(patient.id),
                                     ),
                                   ),
                                 const SizedBox(width: 8),
@@ -320,7 +404,13 @@ class QueueScreen extends StatelessWidget {
                     padding: const EdgeInsets.all(16),
                     child: Row(
                       children: const [
-                        Text('Current Queue', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                        Text(
+                          'Current Queue',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -334,9 +424,13 @@ class QueueScreen extends StatelessWidget {
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
                           color: patient.status == QueueStatus.inConsultation
-                              ? AppColors.info.withOpacity(0.05)
+                              ? AppColors.info.withValues(alpha: 0.05)
                               : Colors.transparent,
-                          border: Border(bottom: BorderSide(color: AppColors.border.withOpacity(0.7))),
+                          border: Border(
+                            bottom: BorderSide(
+                              color: AppColors.border.withValues(alpha: 0.7),
+                            ),
+                          ),
                         ),
                         child: Row(
                           children: [
@@ -344,11 +438,12 @@ class QueueScreen extends StatelessWidget {
                               width: 56,
                               height: 56,
                               decoration: BoxDecoration(
-                                color: patient.status == QueueStatus.inConsultation
+                                color:
+                                    patient.status == QueueStatus.inConsultation
                                     ? AppColors.info
                                     : isUrgent
-                                        ? AppColors.destructive
-                                        : AppColors.muted,
+                                    ? AppColors.destructive
+                                    : AppColors.muted,
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               alignment: Alignment.center,
@@ -357,7 +452,10 @@ class QueueScreen extends StatelessWidget {
                                 style: TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
-                                  color: patient.status == QueueStatus.inConsultation || isUrgent
+                                  color:
+                                      patient.status ==
+                                              QueueStatus.inConsultation ||
+                                          isUrgent
                                       ? Colors.white
                                       : AppColors.mutedForeground,
                                 ),
@@ -372,37 +470,63 @@ class QueueScreen extends StatelessWidget {
                                     children: [
                                       Text(
                                         patient.patientName,
-                                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                                        style: const TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                       ),
                                       if (isUrgent) ...[
                                         const SizedBox(width: 8),
                                         Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 4,
+                                          ),
                                           decoration: BoxDecoration(
-                                            color: AppColors.destructive.withOpacity(0.15),
-                                            borderRadius: BorderRadius.circular(999),
+                                            color: AppColors.destructive
+                                                .withOpacity(0.15),
+                                            borderRadius: BorderRadius.circular(
+                                              999,
+                                            ),
                                           ),
                                           child: Text(
                                             'Urgent',
-                                            style: TextStyle(fontSize: 11, color: AppColors.destructive),
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              color: AppColors.destructive,
+                                            ),
                                           ),
                                         ),
                                       ],
                                       const SizedBox(width: 8),
                                       Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
                                         decoration: BoxDecoration(
                                           color: statusStyle.background,
-                                          borderRadius: BorderRadius.circular(999),
-                                          border: Border.all(color: statusStyle.border),
+                                          borderRadius: BorderRadius.circular(
+                                            999,
+                                          ),
+                                          border: Border.all(
+                                            color: statusStyle.border,
+                                          ),
                                         ),
                                         child: Row(
                                           children: [
-                                            Icon(statusStyle.icon, size: 12, color: statusStyle.foreground),
+                                            Icon(
+                                              statusStyle.icon,
+                                              size: 12,
+                                              color: statusStyle.foreground,
+                                            ),
                                             const SizedBox(width: 4),
                                             Text(
                                               statusStyle.label,
-                                              style: TextStyle(fontSize: 11, color: statusStyle.foreground),
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                color: statusStyle.foreground,
+                                              ),
                                             ),
                                           ],
                                         ),
@@ -413,31 +537,49 @@ class QueueScreen extends StatelessWidget {
                                   Row(
                                     children: [
                                       Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
                                         decoration: BoxDecoration(
                                           color: AppColors.muted,
-                                          borderRadius: BorderRadius.circular(6),
+                                          borderRadius: BorderRadius.circular(
+                                            6,
+                                          ),
                                         ),
                                         child: Text(
                                           patient.patientId,
-                                          style: TextStyle(fontSize: 11, color: AppColors.mutedForeground),
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: AppColors.mutedForeground,
+                                          ),
                                         ),
                                       ),
                                       const SizedBox(width: 8),
                                       Row(
                                         children: [
-                                          Icon(Icons.phone, size: 14, color: AppColors.mutedForeground),
+                                          Icon(
+                                            Icons.phone,
+                                            size: 14,
+                                            color: AppColors.mutedForeground,
+                                          ),
                                           const SizedBox(width: 4),
                                           Text(
                                             patient.phone,
-                                            style: TextStyle(fontSize: 12, color: AppColors.mutedForeground),
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: AppColors.mutedForeground,
+                                            ),
                                           ),
                                         ],
                                       ),
                                       const SizedBox(width: 12),
                                       Text(
                                         patient.reason,
-                                        style: TextStyle(fontSize: 12, color: AppColors.mutedForeground),
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: AppColors.mutedForeground,
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -450,11 +592,16 @@ class QueueScreen extends StatelessWidget {
                               children: [
                                 Text(
                                   'Check-in: ${patient.checkInTime}',
-                                  style: TextStyle(fontSize: 12, color: AppColors.mutedForeground),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.mutedForeground,
+                                  ),
                                 ),
                                 const SizedBox(height: 6),
                                 Text(
-                                  patient.waitTime > 0 ? "${patient.waitTime} min wait" : 'Just arrived',
+                                  patient.waitTime > 0
+                                      ? "${patient.waitTime} min wait"
+                                      : 'Just arrived',
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
@@ -467,13 +614,24 @@ class QueueScreen extends StatelessWidget {
                             Row(
                               children: [
                                 if (patient.status == QueueStatus.waiting)
-                                  const AppButton(label: 'Start', icon: Icons.play_arrow, size: AppButtonSize.small),
-                                if (patient.status == QueueStatus.inConsultation)
-                                  const AppButton(
+                                  AppButton(
+                                    label: 'Start',
+                                    icon: Icons.play_arrow,
+                                    size: AppButtonSize.small,
+                                    onPressed: () => context
+                                        .read<QueueProvider>()
+                                        .startConsultation(patient.id),
+                                  ),
+                                if (patient.status ==
+                                    QueueStatus.inConsultation)
+                                  AppButton(
                                     label: 'Complete',
                                     icon: Icons.check_circle,
                                     size: AppButtonSize.small,
                                     variant: AppButtonVariant.outline,
+                                    onPressed: () => context
+                                        .read<QueueProvider>()
+                                        .completeConsultation(patient.id),
                                   ),
                                 const SizedBox(width: 8),
                                 AppButton(
@@ -532,8 +690,20 @@ class QueueScreen extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-              Text(label, style: TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.mutedForeground,
+                ),
+              ),
             ],
           ),
         ],

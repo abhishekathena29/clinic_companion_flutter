@@ -12,17 +12,24 @@ import 'patient_dashboard_provider.dart';
 class PatientDashboardScreen extends StatelessWidget {
   const PatientDashboardScreen({super.key});
 
-  bool _isDesktop(BuildContext context) => MediaQuery.of(context).size.width >= 768;
+  bool _isDesktop(BuildContext context) =>
+      MediaQuery.of(context).size.width >= 768;
 
   @override
   Widget build(BuildContext context) {
     final isDesktop = _isDesktop(context);
     final auth = context.watch<AuthProvider>();
     final provider = context.watch<PatientDashboardProvider>();
-    provider.updatePatientName(auth.profileName);
+    final patient = context.read<AppointmentsRepository>().patientForUser(
+      auth.user?.uid,
+    );
+    final patientId = patient?.id ?? auth.user?.uid ?? '';
+    final patientName = auth.profileName.trim().isEmpty
+        ? 'You'
+        : auth.profileName.trim();
 
     final today = DateFormat('d MMMM yyyy', 'en_IN').format(DateTime.now());
-    final appointments = provider.upcomingAppointments;
+    final appointments = provider.upcomingAppointmentsFor(patientId);
 
     return PatientLayout(
       routeName: '/patient',
@@ -30,7 +37,7 @@ class PatientDashboardScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '${provider.greeting}, ${provider.patientName}',
+            '${provider.greeting}, $patientName',
             style: const TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.w900,
@@ -51,7 +58,9 @@ class PatientDashboardScreen extends StatelessWidget {
                     title: 'Book Appointment',
                     subtitle: 'Find specialists near you',
                     icon: Icons.event_available_rounded,
-                    onTap: () => Navigator.of(context).pushReplacementNamed('/patient/doctors'),
+                    onTap: () => Navigator.of(
+                      context,
+                    ).pushReplacementNamed('/patient/doctors'),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -60,7 +69,9 @@ class PatientDashboardScreen extends StatelessWidget {
                     title: 'My Doctors',
                     subtitle: 'Revisit your recent visits',
                     icon: Icons.medical_services_rounded,
-                    onTap: () => Navigator.of(context).pushReplacementNamed('/patient/doctors'),
+                    onTap: () => Navigator.of(
+                      context,
+                    ).pushReplacementNamed('/patient/doctors'),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -69,8 +80,9 @@ class PatientDashboardScreen extends StatelessWidget {
                     title: 'Appointments',
                     subtitle: 'Track your upcoming slots',
                     icon: Icons.schedule_rounded,
-                    onTap: () =>
-                        Navigator.of(context).pushReplacementNamed('/patient/appointments'),
+                    onTap: () => Navigator.of(
+                      context,
+                    ).pushReplacementNamed('/patient/appointments'),
                   ),
                 ),
               ],
@@ -82,21 +94,27 @@ class PatientDashboardScreen extends StatelessWidget {
                   title: 'Book Appointment',
                   subtitle: 'Find specialists near you',
                   icon: Icons.event_available_rounded,
-                  onTap: () => Navigator.of(context).pushReplacementNamed('/patient/doctors'),
+                  onTap: () => Navigator.of(
+                    context,
+                  ).pushReplacementNamed('/patient/doctors'),
                 ),
                 const SizedBox(height: 12),
                 _QuickActionCard(
                   title: 'My Doctors',
                   subtitle: 'Revisit your recent visits',
                   icon: Icons.medical_services_rounded,
-                  onTap: () => Navigator.of(context).pushReplacementNamed('/patient/doctors'),
+                  onTap: () => Navigator.of(
+                    context,
+                  ).pushReplacementNamed('/patient/doctors'),
                 ),
                 const SizedBox(height: 12),
                 _QuickActionCard(
                   title: 'Appointments',
                   subtitle: 'Track your upcoming slots',
                   icon: Icons.schedule_rounded,
-                  onTap: () => Navigator.of(context).pushReplacementNamed('/patient/appointments'),
+                  onTap: () => Navigator.of(
+                    context,
+                  ).pushReplacementNamed('/patient/appointments'),
                 ),
               ],
             ),
@@ -109,8 +127,9 @@ class PatientDashboardScreen extends StatelessWidget {
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               TextButton(
-                onPressed: () =>
-                    Navigator.of(context).pushReplacementNamed('/patient/appointments'),
+                onPressed: () => Navigator.of(
+                  context,
+                ).pushReplacementNamed('/patient/appointments'),
                 child: const Text('View all'),
               ),
             ],
@@ -143,8 +162,9 @@ class PatientDashboardScreen extends StatelessWidget {
                   AppButton(
                     label: 'Book',
                     size: AppButtonSize.small,
-                    onPressed: () =>
-                        Navigator.of(context).pushReplacementNamed('/patient/doctors'),
+                    onPressed: () => Navigator.of(
+                      context,
+                    ).pushReplacementNamed('/patient/doctors'),
                   ),
                 ],
               ),
@@ -200,12 +220,18 @@ class _QuickActionCard extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     subtitle,
-                    style: TextStyle(color: AppColors.mutedForeground, fontSize: 13),
+                    style: TextStyle(
+                      color: AppColors.mutedForeground,
+                      fontSize: 13,
+                    ),
                   ),
                 ],
               ),
@@ -234,7 +260,7 @@ class _AppointmentCard extends StatelessWidget {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: AppColors.primaryLight.withOpacity(0.4),
+              color: AppColors.primaryLight.withValues(alpha: 0.4),
               borderRadius: BorderRadius.circular(16),
             ),
             alignment: Alignment.center,
@@ -255,7 +281,10 @@ class _AppointmentCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   '${appointment.specialty} • ${appointment.clinic}',
-                  style: TextStyle(color: AppColors.mutedForeground, fontSize: 13),
+                  style: TextStyle(
+                    color: AppColors.mutedForeground,
+                    fontSize: 13,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 Text(
