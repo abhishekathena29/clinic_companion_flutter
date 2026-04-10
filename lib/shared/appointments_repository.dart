@@ -1,8 +1,35 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+
+DateTime? _parseFirestoreDate(dynamic value) {
+  if (value == null) return null;
+  if (value is Timestamp) return value.toDate();
+  if (value is DateTime) return value;
+  if (value is int) {
+    return DateTime.fromMillisecondsSinceEpoch(value);
+  }
+  if (value is String) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) return null;
+
+    final parsed = DateTime.tryParse(trimmed);
+    if (parsed != null) return parsed;
+
+    for (final pattern in const ['dd/MM/yyyy', 'd/M/yyyy', 'dd-MM-yyyy']) {
+      try {
+        return DateFormat(pattern).parseStrict(trimmed);
+      } catch (_) {
+        continue;
+      }
+    }
+  }
+  return null;
+}
 
 class Appointment {
   const Appointment({
@@ -24,8 +51,7 @@ class Appointment {
     DocumentSnapshot<Map<String, dynamic>> doc,
   ) {
     final data = doc.data() ?? <String, dynamic>{};
-    final timestamp = data['date'] as Timestamp?;
-    final date = timestamp?.toDate() ?? DateTime.now();
+    final date = _parseFirestoreDate(data['date']) ?? DateTime.now();
 
     return Appointment(
       id: doc.id,
@@ -136,6 +162,7 @@ class Patient {
 
   factory Patient.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data() ?? <String, dynamic>{};
+    final lastVisit = _parseFirestoreDate(data['lastVisit']);
     return Patient(
       id: doc.id,
       patientId: data['patientCode']?.toString() ?? doc.id,
@@ -143,7 +170,9 @@ class Patient {
       age: (data['age'] as num?)?.toInt() ?? 0,
       gender: data['gender']?.toString() ?? 'O',
       phone: data['phone']?.toString() ?? '',
-      lastVisit: data['lastVisit']?.toString() ?? '',
+      lastVisit: lastVisit == null
+          ? data['lastVisit']?.toString() ?? ''
+          : DateFormat('yyyy-MM-dd').format(lastVisit),
       totalVisits: (data['totalVisits'] as num?)?.toInt() ?? 0,
       conditions: ((data['conditions'] as List?) ?? const [])
           .map((value) => value.toString())
@@ -283,6 +312,56 @@ String queuePriorityValue(QueuePriority priority) {
   }
 }
 
+class HealthDocument {
+  const HealthDocument({
+    required this.id,
+    required this.patientId,
+    required this.patientName,
+    required this.uploadedById,
+    required this.uploadedByName,
+    required this.uploadedByRole,
+    required this.fileName,
+    required this.fileUrl,
+    required this.fileType,
+    required this.category,
+    required this.notes,
+    required this.uploadedAt,
+  });
+
+  factory HealthDocument.fromFirestore(
+    DocumentSnapshot<Map<String, dynamic>> doc,
+  ) {
+    final data = doc.data() ?? <String, dynamic>{};
+    return HealthDocument(
+      id: doc.id,
+      patientId: data['patientId']?.toString() ?? '',
+      patientName: data['patientName']?.toString() ?? '',
+      uploadedById: data['uploadedById']?.toString() ?? '',
+      uploadedByName: data['uploadedByName']?.toString() ?? '',
+      uploadedByRole: data['uploadedByRole']?.toString() ?? 'patient',
+      fileName: data['fileName']?.toString() ?? '',
+      fileUrl: data['fileUrl']?.toString() ?? '',
+      fileType: data['fileType']?.toString() ?? '',
+      category: data['category']?.toString() ?? 'General',
+      notes: data['notes']?.toString() ?? '',
+      uploadedAt: (data['uploadedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+    );
+  }
+
+  final String id;
+  final String patientId;
+  final String patientName;
+  final String uploadedById;
+  final String uploadedByName;
+  final String uploadedByRole;
+  final String fileName;
+  final String fileUrl;
+  final String fileType;
+  final String category;
+  final String notes;
+  final DateTime uploadedAt;
+}
+
 class AppointmentsRepository extends ChangeNotifier {
   AppointmentsRepository() {
     _doctorSubscription = _firestore
@@ -319,25 +398,47 @@ class AppointmentsRepository extends ChangeNotifier {
         ..sort((a, b) => a.tokenNumber.compareTo(b.tokenNumber));
       notifyListeners();
     });
+
+    _documentSubscription = _firestore
+        .collection('health_documents')
+        .orderBy('uploadedAt', descending: true)
+        .snapshots()
+        .listen((snapshot) {
+          _documents =
+              snapshot.docs.map(HealthDocument.fromFirestore).toList();
+          notifyListeners();
+        });
   }
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  final FirebaseStorage _storage = FirebaseStorage.instance;
 
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _doctorSubscription;
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _patientSubscription;
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>?
   _appointmentSubscription;
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _queueSubscription;
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>?
+  _documentSubscription;
 
   List<DoctorProfile> _doctors = const [];
   List<Patient> _patients = const [];
   List<Appointment> _appointments = const [];
   List<QueueEntry> _queue = const [];
+  List<HealthDocument> _documents = const [];
 
   List<DoctorProfile> get doctors => List.unmodifiable(_doctors);
   List<Patient> get patients => List.unmodifiable(_patients);
   List<Appointment> get all => List.unmodifiable(_appointments);
   List<QueueEntry> get queue => List.unmodifiable(_queue);
+  List<HealthDocument> get documents => List.unmodifiable(_documents);
+
+  List<HealthDocument> documentsForPatient(String patientId) {
+    return _documents
+        .where((doc) => doc.patientId == patientId)
+        .toList();
+  }
 
   Patient? patientForUser(String? userId) {
     if (userId == null || userId.isEmpty) return null;
@@ -529,12 +630,76 @@ class AppointmentsRepository extends ChangeNotifier {
     }, SetOptions(merge: true));
   }
 
+  Future<void> uploadDocument({
+    required String patientId,
+    required String patientName,
+    required String uploadedById,
+    required String uploadedByName,
+    required String uploadedByRole,
+    required String fileName,
+    required Uint8List fileBytes,
+    required String category,
+    String notes = '',
+  }) async {
+    final ext = fileName.contains('.') ? fileName.split('.').last : 'pdf';
+    final storagePath =
+        'health_documents/$patientId/${DateTime.now().millisecondsSinceEpoch}_$fileName';
+    final ref = _storage.ref(storagePath);
+    final metadata = SettableMetadata(
+      contentType: _mimeType(ext),
+    );
+    await ref.putData(fileBytes, metadata);
+    final downloadUrl = await ref.getDownloadURL();
+
+    await _firestore.collection('health_documents').add({
+      'patientId': patientId,
+      'patientName': patientName,
+      'uploadedById': uploadedById,
+      'uploadedByName': uploadedByName,
+      'uploadedByRole': uploadedByRole,
+      'fileName': fileName,
+      'fileUrl': downloadUrl,
+      'fileType': ext,
+      'category': category,
+      'notes': notes,
+      'uploadedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> deleteDocument(String documentId, String fileUrl) async {
+    try {
+      await _storage.refFromURL(fileUrl).delete();
+    } catch (_) {
+      // File may already be deleted from storage
+    }
+    await _firestore.collection('health_documents').doc(documentId).delete();
+  }
+
+  static String _mimeType(String ext) {
+    switch (ext.toLowerCase()) {
+      case 'pdf':
+        return 'application/pdf';
+      case 'png':
+        return 'image/png';
+      case 'jpg':
+      case 'jpeg':
+        return 'image/jpeg';
+      case 'doc':
+        return 'application/msword';
+      case 'docx':
+        return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      default:
+        return 'application/octet-stream';
+    }
+  }
+
   @override
   void dispose() {
     _doctorSubscription?.cancel();
     _patientSubscription?.cancel();
     _appointmentSubscription?.cancel();
     _queueSubscription?.cancel();
+    _documentSubscription?.cancel();
     super.dispose();
   }
 }

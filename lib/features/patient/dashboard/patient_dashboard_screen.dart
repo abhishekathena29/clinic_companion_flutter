@@ -6,7 +6,7 @@ import '../../../shared/appointments_repository.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_decorations.dart';
 import '../../../widgets/app_button.dart';
-import '../../../widgets/patient_layout.dart';
+import '../patient_shell.dart';
 import 'patient_dashboard_provider.dart';
 
 class PatientDashboardScreen extends StatelessWidget {
@@ -31,9 +31,7 @@ class PatientDashboardScreen extends StatelessWidget {
     final today = DateFormat('d MMMM yyyy', 'en_IN').format(DateTime.now());
     final appointments = provider.upcomingAppointmentsFor(patientId);
 
-    return PatientLayout(
-      routeName: '/patient',
-      child: Column(
+    return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
@@ -58,9 +56,7 @@ class PatientDashboardScreen extends StatelessWidget {
                     title: 'Book Appointment',
                     subtitle: 'Find specialists near you',
                     icon: Icons.event_available_rounded,
-                    onTap: () => Navigator.of(
-                      context,
-                    ).pushReplacementNamed('/patient/doctors'),
+                    onTap: () => PatientShell.switchTab(context, 1),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -69,9 +65,7 @@ class PatientDashboardScreen extends StatelessWidget {
                     title: 'My Doctors',
                     subtitle: 'Revisit your recent visits',
                     icon: Icons.medical_services_rounded,
-                    onTap: () => Navigator.of(
-                      context,
-                    ).pushReplacementNamed('/patient/doctors'),
+                    onTap: () => PatientShell.switchTab(context, 1),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -80,9 +74,7 @@ class PatientDashboardScreen extends StatelessWidget {
                     title: 'Appointments',
                     subtitle: 'Track your upcoming slots',
                     icon: Icons.schedule_rounded,
-                    onTap: () => Navigator.of(
-                      context,
-                    ).pushReplacementNamed('/patient/appointments'),
+                    onTap: () => PatientShell.switchTab(context, 2),
                   ),
                 ),
               ],
@@ -94,27 +86,21 @@ class PatientDashboardScreen extends StatelessWidget {
                   title: 'Book Appointment',
                   subtitle: 'Find specialists near you',
                   icon: Icons.event_available_rounded,
-                  onTap: () => Navigator.of(
-                    context,
-                  ).pushReplacementNamed('/patient/doctors'),
+                  onTap: () => PatientShell.switchTab(context, 1),
                 ),
                 const SizedBox(height: 12),
                 _QuickActionCard(
                   title: 'My Doctors',
                   subtitle: 'Revisit your recent visits',
                   icon: Icons.medical_services_rounded,
-                  onTap: () => Navigator.of(
-                    context,
-                  ).pushReplacementNamed('/patient/doctors'),
+                  onTap: () => PatientShell.switchTab(context, 1),
                 ),
                 const SizedBox(height: 12),
                 _QuickActionCard(
                   title: 'Appointments',
                   subtitle: 'Track your upcoming slots',
                   icon: Icons.schedule_rounded,
-                  onTap: () => Navigator.of(
-                    context,
-                  ).pushReplacementNamed('/patient/appointments'),
+                  onTap: () => PatientShell.switchTab(context, 2),
                 ),
               ],
             ),
@@ -127,9 +113,7 @@ class PatientDashboardScreen extends StatelessWidget {
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               TextButton(
-                onPressed: () => Navigator.of(
-                  context,
-                ).pushReplacementNamed('/patient/appointments'),
+                onPressed: () => PatientShell.switchTab(context, 2),
                 child: const Text('View all'),
               ),
             ],
@@ -162,9 +146,7 @@ class PatientDashboardScreen extends StatelessWidget {
                   AppButton(
                     label: 'Book',
                     size: AppButtonSize.small,
-                    onPressed: () => Navigator.of(
-                      context,
-                    ).pushReplacementNamed('/patient/doctors'),
+                    onPressed: () => PatientShell.switchTab(context, 1),
                   ),
                 ],
               ),
@@ -176,8 +158,7 @@ class PatientDashboardScreen extends StatelessWidget {
               }).toList(),
             ),
         ],
-      ),
-    );
+      );
   }
 }
 

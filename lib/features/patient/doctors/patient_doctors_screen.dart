@@ -6,7 +6,6 @@ import '../../../shared/appointments_repository.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_decorations.dart';
 import '../../../widgets/app_button.dart';
-import '../../../widgets/patient_layout.dart';
 import '../appointments/patient_appointments_provider.dart';
 import 'patient_doctors_provider.dart';
 
@@ -138,42 +137,39 @@ class PatientDoctorsScreen extends StatelessWidget {
     final patientName = auth.profileName;
     final doctors = provider.doctors;
 
-    return PatientLayout(
-      routeName: '/patient/doctors',
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Find Doctors',
-            style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'Browse specialists and book consultations in minutes.',
-            style: TextStyle(color: AppColors.mutedForeground, fontSize: 15),
-          ),
-          const SizedBox(height: 24),
-          GridView.count(
-            crossAxisCount: isDesktop ? 2 : 1,
-            shrinkWrap: true,
-            mainAxisSpacing: 16,
-            crossAxisSpacing: 16,
-            physics: const NeverScrollableScrollPhysics(),
-            childAspectRatio: isDesktop ? 2.7 : 1.8,
-            children: doctors.map((doctor) {
-              return _DoctorCard(
-                doctor: doctor,
-                onBook: () => _showBookingDialog(
-                  context,
-                  doctor,
-                  patientId: patientId,
-                  patientName: patientName,
-                ),
-              );
-            }).toList(),
-          ),
-        ],
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Find Doctors',
+          style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          'Browse specialists and book consultations in minutes.',
+          style: TextStyle(color: AppColors.mutedForeground, fontSize: 15),
+        ),
+        const SizedBox(height: 24),
+        GridView.count(
+          crossAxisCount: isDesktop ? 2 : 1,
+          shrinkWrap: true,
+          mainAxisSpacing: 16,
+          crossAxisSpacing: 16,
+          physics: const NeverScrollableScrollPhysics(),
+          childAspectRatio: isDesktop ? 2.7 : 1.8,
+          children: doctors.map((doctor) {
+            return _DoctorCard(
+              doctor: doctor,
+              onBook: () => _showBookingDialog(
+                context,
+                doctor,
+                patientId: patientId,
+                patientName: patientName,
+              ),
+            );
+          }).toList(),
+        ),
+      ],
     );
   }
 }

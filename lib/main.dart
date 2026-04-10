@@ -8,25 +8,20 @@ import 'features/auth/auth_provider.dart';
 import 'features/auth/auth_screen.dart';
 import 'features/common/not_found_screen.dart';
 import 'features/doctor/dashboard/dashboard_provider.dart';
-import 'features/doctor/dashboard/dashboard_screen.dart';
+import 'features/doctor/doctor_shell.dart';
+import 'features/doctor/documents/doctor_documents_provider.dart';
 import 'features/doctor/patients/patients_provider.dart';
-import 'features/doctor/patients/patients_screen.dart';
 import 'features/doctor/queue/queue_provider.dart';
-import 'features/doctor/queue/queue_screen.dart';
 import 'features/doctor/schedule/schedule_provider.dart';
-import 'features/doctor/schedule/schedule_screen.dart';
 import 'features/doctor/settings/settings_provider.dart';
-import 'features/doctor/settings/settings_screen.dart';
 import 'features/onboarding/onboarding_provider.dart';
 import 'features/onboarding/onboarding_screen.dart';
 import 'features/patient/appointments/patient_appointments_provider.dart';
-import 'features/patient/appointments/patient_appointments_screen.dart';
 import 'features/patient/dashboard/patient_dashboard_provider.dart';
-import 'features/patient/dashboard/patient_dashboard_screen.dart';
 import 'features/patient/doctors/patient_doctors_provider.dart';
-import 'features/patient/doctors/patient_doctors_screen.dart';
+import 'features/patient/documents/patient_documents_provider.dart';
+import 'features/patient/patient_shell.dart';
 import 'features/patient/settings/patient_settings_provider.dart';
-import 'features/patient/settings/patient_settings_screen.dart';
 import 'theme/app_theme.dart';
 import 'shared/appointments_repository.dart';
 
@@ -72,6 +67,10 @@ class ClinicCompanionApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => SettingsProvider()),
         ChangeNotifierProvider(
           create: (context) =>
+              DoctorDocumentsProvider(context.read<AppointmentsRepository>()),
+        ),
+        ChangeNotifierProvider(
+          create: (context) =>
               PatientDashboardProvider(context.read<AppointmentsRepository>()),
         ),
         ChangeNotifierProvider(
@@ -84,6 +83,10 @@ class ClinicCompanionApp extends StatelessWidget {
           ),
         ),
         ChangeNotifierProvider(create: (_) => PatientSettingsProvider()),
+        ChangeNotifierProvider(
+          create: (context) =>
+              PatientDocumentsProvider(context.read<AppointmentsRepository>()),
+        ),
       ],
       child: MaterialApp(
         title: 'Clinic Companion',
@@ -94,16 +97,11 @@ class ClinicCompanionApp extends StatelessWidget {
           '/': (context) => const _AuthGate(),
           '/onboarding': (context) => const OnboardingScreen(),
           '/auth': (context) => const AuthScreen(),
-          '/doctor': (context) => const DashboardScreen(),
-          '/doctor/patients': (context) => const PatientsScreen(),
-          '/doctor/queue': (context) => const QueueScreen(),
-          '/doctor/appointments': (context) => const ScheduleScreen(),
-          '/doctor/settings': (context) => const SettingsScreen(),
-          '/patient': (context) => const PatientDashboardScreen(),
-          '/patient/doctors': (context) => const PatientDoctorsScreen(),
-          '/patient/appointments': (context) =>
-              const PatientAppointmentsScreen(),
-          '/patient/settings': (context) => const PatientSettingsScreen(),
+          '/doctor': (context) => const DoctorShell(),
+          '/patient': (context) => const PatientShell(),
+          '/patient/doctors': (context) => const PatientShell(),
+          '/patient/appointments': (context) => const PatientShell(),
+          '/patient/settings': (context) => const PatientShell(),
         },
         onUnknownRoute: (settings) => MaterialPageRoute(
           builder: (_) => const NotFoundScreen(),
@@ -121,6 +119,10 @@ class _AuthGate extends StatelessWidget {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
 
+    if (auth.isInitializing) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
     if (!auth.isAuthenticated) {
       return const OnboardingScreen();
     }
@@ -130,7 +132,7 @@ class _AuthGate extends StatelessWidget {
     }
 
     return auth.homeRoute == '/doctor'
-        ? const DashboardScreen()
-        : const PatientDashboardScreen();
+        ? const DoctorShell()
+        : const PatientShell();
   }
 }

@@ -4,13 +4,22 @@ import '../features/auth/auth_provider.dart';
 import '../theme/app_colors.dart';
 
 class Sidebar extends StatelessWidget {
-  const Sidebar({super.key});
+  const Sidebar({
+    super.key,
+    required this.currentIndex,
+    required this.onSelected,
+  });
+
+  final int currentIndex;
+  final ValueChanged<int> onSelected;
 
   @override
   Widget build(BuildContext context) {
-    final currentRoute = ModalRoute.of(context)?.settings.name ?? '/doctor';
     final auth = context.watch<AuthProvider>();
     final name = auth.profileName.isEmpty ? 'Doctor' : auth.profileName;
+    final clinic = auth.profileClinic.isEmpty
+        ? 'Clinic Companion'
+        : auth.profileClinic;
 
     return Container(
       width: 280,
@@ -90,38 +99,44 @@ class Sidebar extends StatelessWidget {
                     _NavItem(
                       label: 'Dashboard',
                       icon: Icons.dashboard_rounded,
-                      route: '/doctor',
-                      isActive: currentRoute == '/doctor',
+                      isActive: currentIndex == 0,
+                      onTap: () => onSelected(0),
                     ),
                     _NavItem(
                       label: 'Patients',
                       icon: Icons.people_alt_rounded,
-                      route: '/doctor/patients',
-                      isActive: currentRoute == '/doctor/patients',
+                      isActive: currentIndex == 1,
+                      onTap: () => onSelected(1),
                     ),
                     _NavItem(
                       label: 'Queue',
                       icon: Icons.list_alt_rounded,
-                      route: '/doctor/queue',
-                      isActive: currentRoute == '/doctor/queue',
+                      isActive: currentIndex == 2,
+                      onTap: () => onSelected(2),
                     ),
                     _NavItem(
                       label: 'Schedule',
                       icon: Icons.calendar_month_rounded,
-                      route: '/doctor/appointments',
-                      isActive: currentRoute == '/doctor/appointments',
+                      isActive: currentIndex == 3,
+                      onTap: () => onSelected(3),
                     ),
                     _NavItem(
                       label: 'Reports',
                       icon: Icons.insert_chart_rounded,
-                      route: '/doctor/reports',
-                      isActive: currentRoute == '/doctor/reports',
+                      isActive: currentIndex == 4,
+                      onTap: () => onSelected(4),
+                    ),
+                    _NavItem(
+                      label: 'Documents',
+                      icon: Icons.folder_shared_rounded,
+                      isActive: currentIndex == 5,
+                      onTap: () => onSelected(5),
                     ),
                     _NavItem(
                       label: 'Settings',
                       icon: Icons.settings_rounded,
-                      route: '/doctor/settings',
-                      isActive: currentRoute == '/doctor/settings',
+                      isActive: currentIndex == 6,
+                      onTap: () => onSelected(6),
                     ),
                   ],
                 ),
@@ -215,7 +230,7 @@ class Sidebar extends StatelessWidget {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          'City Care Clinic',
+                          clinic,
                           style: TextStyle(
                             fontSize: 13,
                             color: Colors.white.withOpacity(0.7),
@@ -265,14 +280,14 @@ class _NavItem extends StatefulWidget {
   const _NavItem({
     required this.label,
     required this.icon,
-    required this.route,
     required this.isActive,
+    required this.onTap,
   });
 
   final String label;
   final IconData icon;
-  final String route;
   final bool isActive;
+  final VoidCallback onTap;
 
   @override
   State<_NavItem> createState() => _NavItemState();
@@ -292,12 +307,7 @@ class _NavItemState extends State<_NavItem> {
         onExit: (_) => setState(() => _isHovered = false),
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
-          onTap: () {
-            final current = ModalRoute.of(context)?.settings.name ?? '/';
-            if (current != widget.route) {
-              Navigator.of(context).pushReplacementNamed(widget.route);
-            }
-          },
+          onTap: widget.onTap,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 250),
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),

@@ -4,11 +4,17 @@ import '../features/auth/auth_provider.dart';
 import '../theme/app_colors.dart';
 
 class PatientSidebar extends StatelessWidget {
-  const PatientSidebar({super.key});
+  const PatientSidebar({
+    super.key,
+    required this.currentRoute,
+    this.onRouteSelected,
+  });
+
+  final String currentRoute;
+  final ValueChanged<String>? onRouteSelected;
 
   @override
   Widget build(BuildContext context) {
-    final currentRoute = ModalRoute.of(context)?.settings.name ?? '/patient';
     final auth = context.watch<AuthProvider>();
     final name = auth.profileName.isEmpty ? 'Patient' : auth.profileName;
 
@@ -18,7 +24,7 @@ class PatientSidebar extends StatelessWidget {
         gradient: AppColors.gradientDark,
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.1),
+            color: AppColors.primary.withValues(alpha: 0.1),
             blurRadius: 24,
             offset: const Offset(4, 0),
           ),
@@ -41,7 +47,7 @@ class PatientSidebar extends StatelessWidget {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.primary.withOpacity(0.5),
+                          color: AppColors.primary.withValues(alpha: 0.5),
                           blurRadius: 12,
                           offset: const Offset(0, 4),
                         ),
@@ -71,7 +77,7 @@ class PatientSidebar extends StatelessWidget {
                         'Care Portal',
                         style: TextStyle(
                           fontSize: 14,
-                          color: Colors.white.withOpacity(0.8),
+                          color: Colors.white.withValues(alpha: 0.8),
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -92,24 +98,35 @@ class PatientSidebar extends StatelessWidget {
                       icon: Icons.home_rounded,
                       route: '/patient',
                       isActive: currentRoute == '/patient',
+                      onRouteSelected: onRouteSelected,
                     ),
                     _NavItem(
                       label: 'Doctors',
                       icon: Icons.medical_services_rounded,
                       route: '/patient/doctors',
                       isActive: currentRoute == '/patient/doctors',
+                      onRouteSelected: onRouteSelected,
                     ),
                     _NavItem(
                       label: 'Appointments',
                       icon: Icons.event_available_rounded,
                       route: '/patient/appointments',
                       isActive: currentRoute == '/patient/appointments',
+                      onRouteSelected: onRouteSelected,
+                    ),
+                    _NavItem(
+                      label: 'Documents',
+                      icon: Icons.folder_shared_rounded,
+                      route: '/patient/documents',
+                      isActive: currentRoute == '/patient/documents',
+                      onRouteSelected: onRouteSelected,
                     ),
                     _NavItem(
                       label: 'Settings',
                       icon: Icons.settings_rounded,
                       route: '/patient/settings',
                       isActive: currentRoute == '/patient/settings',
+                      onRouteSelected: onRouteSelected,
                     ),
                   ],
                 ),
@@ -128,7 +145,7 @@ class PatientSidebar extends StatelessWidget {
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.accent.withOpacity(0.4),
+                          color: AppColors.accent.withValues(alpha: 0.4),
                           blurRadius: 12,
                           offset: const Offset(0, 4),
                         ),
@@ -163,7 +180,7 @@ class PatientSidebar extends StatelessWidget {
                           'Patient Profile',
                           style: TextStyle(
                             fontSize: 13,
-                            color: Colors.white.withOpacity(0.7),
+                            color: Colors.white.withValues(alpha: 0.7),
                             fontWeight: FontWeight.w500,
                           ),
                           overflow: TextOverflow.ellipsis,
@@ -184,13 +201,13 @@ class PatientSidebar extends StatelessWidget {
                       child: Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.08),
+                          color: Colors.white.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
                           Icons.logout_rounded,
                           size: 20,
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withValues(alpha: 0.9),
                         ),
                       ),
                     ),
@@ -212,12 +229,14 @@ class _NavItem extends StatefulWidget {
     required this.icon,
     required this.route,
     required this.isActive,
+    this.onRouteSelected,
   });
 
   final String label;
   final IconData icon;
   final String route;
   final bool isActive;
+  final ValueChanged<String>? onRouteSelected;
 
   @override
   State<_NavItem> createState() => _NavItemState();
@@ -238,9 +257,12 @@ class _NavItemState extends State<_NavItem> {
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
           onTap: () {
-            final current = ModalRoute.of(context)?.settings.name ?? '/patient';
-            if (current != widget.route) {
-              Navigator.of(context).pushReplacementNamed(widget.route);
+            if (!widget.isActive) {
+              if (widget.onRouteSelected != null) {
+                widget.onRouteSelected!(widget.route);
+              } else {
+                Navigator.of(context).pushReplacementNamed(widget.route);
+              }
             }
           },
           child: AnimatedContainer(
@@ -250,13 +272,13 @@ class _NavItemState extends State<_NavItem> {
               color: isSelected
                   ? AppColors.primary
                   : _isHovered
-                      ? Colors.white.withOpacity(0.08)
-                      : Colors.transparent,
+                  ? Colors.white.withValues(alpha: 0.08)
+                  : Colors.transparent,
               borderRadius: BorderRadius.circular(16),
               boxShadow: isSelected
                   ? [
                       BoxShadow(
-                        color: AppColors.primary.withOpacity(0.4),
+                        color: AppColors.primary.withValues(alpha: 0.4),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
@@ -271,8 +293,8 @@ class _NavItemState extends State<_NavItem> {
                   color: isSelected
                       ? Colors.white
                       : _isHovered
-                          ? Colors.white
-                          : Colors.white.withOpacity(0.7),
+                      ? Colors.white
+                      : Colors.white.withValues(alpha: 0.7),
                 ),
                 const SizedBox(width: 16),
                 Text(
@@ -281,8 +303,8 @@ class _NavItemState extends State<_NavItem> {
                     color: isSelected
                         ? Colors.white
                         : _isHovered
-                            ? Colors.white
-                            : Colors.white.withOpacity(0.8),
+                        ? Colors.white
+                        : Colors.white.withValues(alpha: 0.8),
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
                     fontSize: 16,
                   ),

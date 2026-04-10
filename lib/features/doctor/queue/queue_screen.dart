@@ -4,7 +4,6 @@ import '../../../features/auth/auth_provider.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_decorations.dart';
 import '../../../widgets/app_button.dart';
-import '../../../widgets/dashboard_layout.dart';
 import '../../../widgets/mobile_header.dart';
 import '../patients/patients_provider.dart';
 import 'queue_provider.dart';
@@ -134,9 +133,7 @@ class QueueScreen extends StatelessWidget {
 
     final isDesktop = _isDesktop(context);
 
-    return DashboardLayout(
-      routeName: '/doctor/queue',
-      child: Column(
+    return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (!isDesktop) const MobileHeader(title: 'Queue', showSearch: false),
@@ -667,7 +664,6 @@ class QueueScreen extends StatelessWidget {
               ),
             ),
         ],
-      ),
     );
   }
 

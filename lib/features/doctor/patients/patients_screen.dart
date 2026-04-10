@@ -4,9 +4,26 @@ import 'package:provider/provider.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_decorations.dart';
 import '../../../widgets/app_button.dart';
-import '../../../widgets/dashboard_layout.dart';
 import '../../../widgets/mobile_header.dart';
 import 'patients_provider.dart';
+
+String _patientGenderLabel(String gender) {
+  switch (gender.toUpperCase()) {
+    case 'M':
+      return 'Male';
+    case 'F':
+      return 'Female';
+    default:
+      return 'Other';
+  }
+}
+
+String _formatPatientLastVisit(String rawValue) {
+  if (rawValue.trim().isEmpty) return 'No visits yet';
+  final parsed = DateTime.tryParse(rawValue);
+  if (parsed == null) return rawValue;
+  return DateFormat('d MMM yyyy', 'en_IN').format(parsed);
+}
 
 class PatientsScreen extends StatelessWidget {
   const PatientsScreen({super.key});
@@ -166,9 +183,7 @@ class PatientsScreen extends StatelessWidget {
     final provider = context.watch<PatientsProvider>();
     final filteredPatients = provider.filteredPatients;
 
-    return DashboardLayout(
-      routeName: '/doctor/patients',
-      child: Column(
+    return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (!isDesktop)
@@ -314,7 +329,7 @@ class PatientsScreen extends StatelessWidget {
                       vertical: 16,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.muted.withOpacity(0.5),
+                      color: AppColors.muted.withValues(alpha: 0.5),
                       border: Border(
                         bottom: BorderSide(color: AppColors.border),
                       ),
@@ -323,14 +338,14 @@ class PatientsScreen extends StatelessWidget {
                       ),
                     ),
                     child: Row(
-                      children: const [
-                        _TableHeader(width: 240, label: 'PATIENT'),
-                        _TableHeader(width: 140, label: 'ID NUMBER'),
-                        _TableHeader(width: 140, label: 'CONTACT'),
-                        _TableHeader(width: 200, label: 'CONDITIONS'),
-                        _TableHeader(width: 120, label: 'LAST VISIT'),
-                        _TableHeader(width: 80, label: 'VISITS'),
-                        _TableHeader(width: 140, label: ''),
+                      children: [
+                        _TableHeader(flex: 3, label: 'PATIENT'),
+                        _TableHeader(flex: 2, label: 'ID NUMBER'),
+                        _TableHeader(flex: 2, label: 'CONTACT'),
+                        _TableHeader(flex: 2, label: 'CONDITIONS'),
+                        _TableHeader(flex: 2, label: 'LAST VISIT'),
+                        _TableHeader(flex: 1, label: 'VISITS'),
+                        _TableHeader(flex: 2, label: ''),
                       ],
                     ),
                   ),
@@ -416,7 +431,6 @@ class PatientsScreen extends StatelessWidget {
               ),
             ),
         ],
-      ),
     );
   }
 }
@@ -444,7 +458,7 @@ class _MobilePatientCard extends StatelessWidget {
             width: 56,
             height: 56,
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.12),
+              color: AppColors.primary.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
             alignment: Alignment.center,
@@ -477,7 +491,7 @@ class _MobilePatientCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          "${patient.age}y • ${patient.gender == 'M' ? 'Male' : 'Female'} • ${patient.totalVisits} visits",
+                          '${patient.age}y • ${_patientGenderLabel(patient.gender)} • ${patient.totalVisits} visits',
                           style: TextStyle(
                             fontSize: 13,
                             color: AppColors.mutedForeground,
@@ -538,7 +552,7 @@ class _MobilePatientCard extends StatelessWidget {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: AppColors.warning.withOpacity(0.15),
+                            color: AppColors.warning.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(999),
                           ),
                           child: Text(
@@ -593,10 +607,7 @@ class _DesktopPatientRowState extends State<_DesktopPatientRow> {
         .map((part) => part.substring(0, 1))
         .join();
     final conditions = patient.conditions;
-    final lastVisit = DateFormat(
-      'd MMM yyyy',
-      'en_IN',
-    ).format(DateTime.parse(patient.lastVisit));
+    final lastVisit = _formatPatientLastVisit(patient.lastVisit);
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
@@ -606,23 +617,23 @@ class _DesktopPatientRowState extends State<_DesktopPatientRow> {
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         decoration: BoxDecoration(
           color: _isHovered
-              ? AppColors.muted.withOpacity(0.4)
+              ? AppColors.muted.withValues(alpha: 0.4)
               : Colors.transparent,
           border: Border(
-            bottom: BorderSide(color: AppColors.border.withOpacity(0.5)),
+            bottom: BorderSide(color: AppColors.border.withValues(alpha: 0.5)),
           ),
         ),
         child: Row(
           children: [
-            SizedBox(
-              width: 240,
+            Expanded(
+              flex: 3,
               child: Row(
                 children: [
                   Container(
-                    width: 44,
-                    height: 44,
+                    width: 40,
+                    height: 40,
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.12),
+                      color: AppColors.primary.withValues(alpha: 0.12),
                       shape: BoxShape.circle,
                     ),
                     alignment: Alignment.center,
@@ -630,12 +641,12 @@ class _DesktopPatientRowState extends State<_DesktopPatientRow> {
                       initials,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                        fontSize: 14,
                         color: AppColors.primary,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -644,18 +655,19 @@ class _DesktopPatientRowState extends State<_DesktopPatientRow> {
                           patient.name,
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
-                            fontSize: 15,
+                            fontSize: 14,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          "${patient.age}y • ${patient.gender == 'M' ? 'Male' : 'Female'}",
+                          '${patient.age}y • ${_patientGenderLabel(patient.gender)}',
                           style: TextStyle(
-                            fontSize: 13,
+                            fontSize: 12,
                             color: AppColors.mutedForeground,
                             fontWeight: FontWeight.w500,
                           ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
@@ -663,70 +675,75 @@ class _DesktopPatientRowState extends State<_DesktopPatientRow> {
                 ],
               ),
             ),
-            SizedBox(
-              width: 140,
+            Expanded(
+              flex: 2,
               child: Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.muted,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      patient.patientId,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.mutedForeground,
-                        fontWeight: FontWeight.bold,
+                  Flexible(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.muted,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        patient.patientId,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: AppColors.mutedForeground,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 6),
                   Icon(
                     Icons.qr_code_rounded,
-                    size: 16,
+                    size: 14,
                     color: AppColors.mutedForeground,
                   ),
                 ],
               ),
             ),
-            SizedBox(
-              width: 140,
+            Expanded(
+              flex: 2,
               child: Text(
                 patient.phone,
                 style: const TextStyle(
-                  fontSize: 14,
+                  fontSize: 13,
                   fontWeight: FontWeight.w500,
                 ),
+                overflow: TextOverflow.ellipsis,
               ),
             ),
-            SizedBox(
-              width: 200,
+            Expanded(
+              flex: 2,
               child: Wrap(
-                spacing: 8,
-                runSpacing: 8,
+                spacing: 6,
+                runSpacing: 6,
                 children: conditions.isNotEmpty
-                    ? conditions.map((condition) {
+                    ? conditions.take(2).map((condition) {
                         return Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
+                            horizontal: 8,
+                            vertical: 3,
                           ),
                           decoration: BoxDecoration(
-                            color: AppColors.warning.withOpacity(0.12),
+                            color: AppColors.warning.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(999),
                           ),
                           child: Text(
                             condition,
                             style: TextStyle(
-                              fontSize: 12,
+                              fontSize: 11,
                               color: AppColors.warningForeground,
                               fontWeight: FontWeight.w600,
                             ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         );
                       }).toList()
@@ -734,7 +751,7 @@ class _DesktopPatientRowState extends State<_DesktopPatientRow> {
                         Text(
                           'None reported',
                           style: TextStyle(
-                            fontSize: 13,
+                            fontSize: 12,
                             color: AppColors.mutedForeground,
                             fontStyle: FontStyle.italic,
                           ),
@@ -742,26 +759,27 @@ class _DesktopPatientRowState extends State<_DesktopPatientRow> {
                       ],
               ),
             ),
-            SizedBox(
-              width: 120,
+            Expanded(
+              flex: 2,
               child: Text(
                 lastVisit,
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 13,
                   color: AppColors.foreground,
                   fontWeight: FontWeight.w500,
                 ),
+                overflow: TextOverflow.ellipsis,
               ),
             ),
-            SizedBox(
-              width: 80,
+            Expanded(
+              flex: 1,
               child: Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
+                  horizontal: 10,
                   vertical: 4,
                 ),
                 decoration: BoxDecoration(
-                  color: AppColors.info.withOpacity(0.1),
+                  color: AppColors.info.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -774,8 +792,8 @@ class _DesktopPatientRowState extends State<_DesktopPatientRow> {
                 ),
               ),
             ),
-            SizedBox(
-              width: 140,
+            Expanded(
+              flex: 2,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
@@ -783,7 +801,7 @@ class _DesktopPatientRowState extends State<_DesktopPatientRow> {
                     onPressed: () {},
                     icon: Icon(
                       Icons.visibility_rounded,
-                      size: 20,
+                      size: 18,
                       color: AppColors.mutedForeground,
                     ),
                     tooltip: 'View Vault',
@@ -792,7 +810,7 @@ class _DesktopPatientRowState extends State<_DesktopPatientRow> {
                     onPressed: () {},
                     icon: Icon(
                       Icons.edit_rounded,
-                      size: 20,
+                      size: 18,
                       color: AppColors.mutedForeground,
                     ),
                     tooltip: 'Edit Profile',
@@ -829,7 +847,7 @@ class _FilterPill extends StatelessWidget {
         decoration: BoxDecoration(
           color: isActive
               ? AppColors.primary
-              : AppColors.muted.withOpacity(0.5),
+              : AppColors.muted.withValues(alpha:0.5),
           borderRadius: BorderRadius.circular(999),
           border: Border.all(
             color: isActive ? Colors.transparent : AppColors.border,
@@ -837,7 +855,7 @@ class _FilterPill extends StatelessWidget {
           boxShadow: isActive
               ? [
                   BoxShadow(
-                    color: AppColors.primary.withOpacity(0.3),
+                    color: AppColors.primary.withValues(alpha:0.3),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -860,15 +878,15 @@ class _FilterPill extends StatelessWidget {
 }
 
 class _TableHeader extends StatelessWidget {
-  const _TableHeader({required this.width, required this.label});
+  const _TableHeader({required this.flex, required this.label});
 
-  final double width;
+  final int flex;
   final String label;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: width,
+    return Expanded(
+      flex: flex,
       child: Text(
         label,
         style: TextStyle(

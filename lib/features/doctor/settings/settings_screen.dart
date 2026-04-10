@@ -4,9 +4,79 @@ import '../../auth/auth_provider.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_decorations.dart';
 import '../../../widgets/app_button.dart';
-import '../../../widgets/dashboard_layout.dart';
 import '../../../widgets/mobile_header.dart';
 import 'settings_provider.dart';
+
+Future<void> _showEditProfileDialog(BuildContext context) async {
+  final auth = context.read<AuthProvider>();
+  final nameController = TextEditingController(text: auth.profileName);
+  final clinicController = TextEditingController(text: auth.profileClinic);
+  final specialtyController = TextEditingController(
+    text: auth.profileSpecialty,
+  );
+
+  await showDialog<void>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      title: const Text(
+        'Edit Profile',
+        style: TextStyle(fontWeight: FontWeight.w800),
+      ),
+      content: SizedBox(
+        width: 420,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameController,
+              decoration: const InputDecoration(
+                labelText: 'Doctor name',
+                prefixIcon: Icon(Icons.person_rounded),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: clinicController,
+              decoration: const InputDecoration(
+                labelText: 'Clinic name',
+                prefixIcon: Icon(Icons.local_hospital_rounded),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: specialtyController,
+              decoration: const InputDecoration(
+                labelText: 'Specialty',
+                prefixIcon: Icon(Icons.medical_services_rounded),
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(dialogContext).pop(),
+          child: const Text('Cancel'),
+        ),
+        AppButton(
+          label: 'Save',
+          icon: Icons.check_rounded,
+          onPressed: () async {
+            await auth.updateDoctorProfile(
+              name: nameController.text,
+              clinic: clinicController.text,
+              specialty: specialtyController.text,
+            );
+            if (dialogContext.mounted) {
+              Navigator.of(dialogContext).pop();
+            }
+          },
+        ),
+      ],
+    ),
+  );
+}
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -19,86 +89,89 @@ class SettingsScreen extends StatelessWidget {
     final isDesktop = _isDesktop(context);
     final provider = context.watch<SettingsProvider>();
 
-    return DashboardLayout(
-      routeName: '/doctor/settings',
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (!isDesktop)
-            const MobileHeader(title: 'Settings', showSearch: false),
-          if (isDesktop)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Settings & Security',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: -0.5,
-                      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (!isDesktop)
+          const MobileHeader(title: 'Settings', showSearch: false),
+        if (isDesktop)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Settings & Security',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -0.5,
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Clinic preferences, notifications, and security controls',
-                      style: TextStyle(
-                        color: AppColors.mutedForeground,
-                        fontSize: 16,
-                      ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Clinic preferences, notifications, and security controls',
+                    style: TextStyle(
+                      color: AppColors.mutedForeground,
+                      fontSize: 16,
                     ),
-                  ],
-                ),
-                AppButton(
-                  label: 'Sign Out',
-                  icon: Icons.logout_rounded,
-                  variant: AppButtonVariant.outline,
-                  onPressed: () async {
-                    await context.read<AuthProvider>().signOut();
-                    if (context.mounted) {
-                      Navigator.of(context).pushReplacementNamed('/auth');
-                    }
-                  },
-                ),
-              ],
-            ),
-          if (!isDesktop) ...[
-            AppButton(
-              label: 'Sign Out',
-              icon: Icons.logout_rounded,
-              variant: AppButtonVariant.outline,
-              onPressed: () async {
-                await context.read<AuthProvider>().signOut();
-                if (context.mounted) {
-                  Navigator.of(context).pushReplacementNamed('/auth');
-                }
-              },
-            ),
-            const SizedBox(height: 24),
-          ] else
-            const SizedBox(height: 24),
-          if (isDesktop)
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(flex: 5, child: _SettingsColumn(provider: provider)),
-                const SizedBox(width: 32),
-                Expanded(flex: 3, child: _ProfileCard()),
-              ],
-            )
-          else
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _ProfileCard(),
-                const SizedBox(height: 24),
-                _SettingsColumn(provider: provider),
-              ],
-            ),
-        ],
-      ),
+                  ),
+                ],
+              ),
+              AppButton(
+                label: 'Sign Out',
+                icon: Icons.logout_rounded,
+                variant: AppButtonVariant.outline,
+                onPressed: () async {
+                  await context.read<AuthProvider>().signOut();
+                  if (context.mounted) {
+                    Navigator.of(context).pushReplacementNamed('/auth');
+                  }
+                },
+              ),
+            ],
+          ),
+        if (!isDesktop) ...[
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              AppButton(
+                label: 'Sign Out',
+                icon: Icons.logout_rounded,
+                variant: AppButtonVariant.outline,
+                onPressed: () async {
+                  await context.read<AuthProvider>().signOut();
+                  if (context.mounted) {
+                    Navigator.of(context).pushReplacementNamed('/auth');
+                  }
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+        ] else
+          const SizedBox(height: 24),
+        if (isDesktop)
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(flex: 5, child: _SettingsColumn(provider: provider)),
+              const SizedBox(width: 32),
+              Expanded(flex: 3, child: _ProfileCard()),
+            ],
+          )
+        else
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _ProfileCard(),
+              const SizedBox(height: 24),
+              _SettingsColumn(provider: provider),
+            ],
+          ),
+      ],
     );
   }
 }
@@ -106,93 +179,116 @@ class SettingsScreen extends StatelessWidget {
 class _ProfileCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
+    final name = auth.profileName.trim().isEmpty ? 'Doctor' : auth.profileName;
+    final clinic = auth.profileClinic.trim().isEmpty
+        ? 'Clinic Companion'
+        : auth.profileClinic;
+    final initials = name
+        .split(' ')
+        .where((part) => part.isNotEmpty)
+        .take(2)
+        .map((part) => part.substring(0, 1).toUpperCase())
+        .join();
+
     return Container(
       decoration: AppDecorations.card(),
       padding: const EdgeInsets.all(32),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Stack(
-            alignment: Alignment.bottomRight,
-            children: [
-              Container(
-                width: 96,
-                height: 96,
-                decoration: BoxDecoration(
-                  gradient: AppColors.gradientPrimary,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primary.withOpacity(0.3),
-                      blurRadius: 16,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
+          Container(
+            width: 96,
+            height: 96,
+            decoration: BoxDecoration(
+              gradient: AppColors.gradientPrimary,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withOpacity(0.3),
+                  blurRadius: 16,
+                  offset: const Offset(0, 8),
                 ),
-                alignment: Alignment.center,
-                child: const Text(
-                  'DR',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 32,
-                    letterSpacing: 1,
-                  ),
-                ),
+              ],
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              initials.isEmpty ? 'DR' : initials,
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 32,
+                letterSpacing: 1,
               ),
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: AppColors.card,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.border),
-                ),
-                child: Icon(
-                  Icons.camera_alt_rounded,
-                  size: 16,
-                  color: AppColors.mutedForeground,
-                ),
-              ),
-            ],
+            ),
           ),
           const SizedBox(height: 20),
-          const Text(
-            'Dr. Rajesh Kumar',
-            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20),
+          Text(
+            name,
+            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 20),
+            textAlign: TextAlign.center,
           ),
           const SizedBox(height: 6),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            decoration: BoxDecoration(
-              color: AppColors.muted,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              'City Care Clinic',
-              style: TextStyle(
-                fontSize: 13,
-                color: AppColors.mutedForeground,
-                fontWeight: FontWeight.bold,
+          Align(
+            alignment: Alignment.center,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppColors.muted,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                clinic,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: AppColors.mutedForeground,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),
           const SizedBox(height: 32),
-          Row(
-            children: const [
-              Expanded(
-                child: AppButton(
-                  label: 'Edit Profile',
-                  icon: Icons.edit_rounded,
-                  variant: AppButtonVariant.outline,
-                ),
-              ),
-              SizedBox(width: 12),
-              Expanded(
-                child: AppButton(
-                  label: 'Invite Staff',
-                  icon: Icons.group_add_rounded,
-                ),
-              ),
-            ],
+          LayoutBuilder(
+            builder: (context, constraints) {
+              if (constraints.maxWidth < 360) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    AppButton(
+                      label: 'Edit Profile',
+                      icon: Icons.edit_rounded,
+                      variant: AppButtonVariant.outline,
+                      onPressed: () => _showEditProfileDialog(context),
+                    ),
+                    const SizedBox(height: 12),
+                    const AppButton(
+                      label: 'Invite Staff',
+                      icon: Icons.group_add_rounded,
+                    ),
+                  ],
+                );
+              }
+
+              return Row(
+                children: [
+                  Expanded(
+                    child: AppButton(
+                      label: 'Edit Profile',
+                      icon: Icons.edit_rounded,
+                      variant: AppButtonVariant.outline,
+                      onPressed: () => _showEditProfileDialog(context),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: AppButton(
+                      label: 'Invite Staff',
+                      icon: Icons.group_add_rounded,
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
           const SizedBox(height: 32),
           const Divider(height: 1),
@@ -458,27 +554,35 @@ class _SwitchRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              description,
-              style: TextStyle(fontSize: 13, color: AppColors.mutedForeground),
-            ),
-          ],
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                description,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: AppColors.mutedForeground,
+                ),
+              ),
+            ],
+          ),
         ),
+        const SizedBox(width: 12),
         Switch(
           value: value,
           onChanged: onChanged,
           activeColor: AppColors.primary,
-          activeTrackColor: AppColors.primary.withOpacity(0.4),
+          activeTrackColor: AppColors.primary.withValues(alpha: 0.4),
         ),
       ],
     );

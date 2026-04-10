@@ -21,27 +21,29 @@ class PatientLayout extends StatelessWidget {
     final isDesktop = _isDesktop(context);
 
     return Scaffold(
-      extendBody: !isDesktop,
       backgroundColor: AppColors.background,
-      body: Row(
-        children: [
-          if (isDesktop) const PatientSidebar(),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.fromLTRB(
-                isDesktop ? 32 : 16,
-                16,
-                isDesktop ? 32 : 16,
-                isDesktop ? 24 : 96,
-              ),
-              child: child,
-            ),
-          ),
-        ],
-      ),
       bottomNavigationBar: isDesktop
           ? null
           : PatientMobileNav(currentRoute: routeName),
+      body: SafeArea(
+        bottom: !isDesktop,
+        child: Row(
+          children: [
+            if (isDesktop) PatientSidebar(currentRoute: routeName),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(
+                  isDesktop ? 32 : 16,
+                  16,
+                  isDesktop ? 32 : 16,
+                  isDesktop ? 24 : 16,
+                ),
+                child: child,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

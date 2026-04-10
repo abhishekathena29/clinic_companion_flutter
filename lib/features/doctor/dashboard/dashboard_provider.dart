@@ -54,10 +54,24 @@ class DashboardProvider extends ChangeNotifier {
         .map((appointment) => appointment.patientId)
         .where((value) => value.isNotEmpty)
         .toSet();
+    final todayPatientIds = todayAppointments
+        .map((appointment) => appointment.patientId)
+        .where((value) => value.isNotEmpty)
+        .toSet();
+    final linkedPatients = _repository.patients.where((patient) {
+      return patientIds.contains(patient.id) || patientIds.contains(patient.userId);
+    }).toList();
+    final todayLinkedPatients = _repository.patients.where((patient) {
+      return todayPatientIds.contains(patient.id) ||
+          todayPatientIds.contains(patient.userId);
+    }).toList();
     final waitingEntries = doctorQueue
         .where((entry) => entry.status == QueueStatus.waiting)
         .toList();
     final pendingFollowUps = doctorAppointments
+        .where((appointment) => appointment.status.toLowerCase() == 'pending')
+        .length;
+    final pendingTodayAppointments = todayAppointments
         .where((appointment) => appointment.status.toLowerCase() == 'pending')
         .length;
     final averageWait = waitingEntries.isEmpty
@@ -69,8 +83,8 @@ class DashboardProvider extends ChangeNotifier {
     return [
       DashboardStat(
         title: "Today's Patients",
-        value: '${todayAppointments.length}',
-        change: '${patientIds.length} active patients',
+        value: '${todayLinkedPatients.length}',
+        change: '${linkedPatients.length} total tracked',
         changeType: StatChangeType.positive,
         icon: Icons.people,
         variant: StatVariant.primary,
@@ -78,8 +92,7 @@ class DashboardProvider extends ChangeNotifier {
       DashboardStat(
         title: 'Appointments',
         value: '${todayAppointments.length}',
-        change:
-            '${todayAppointments.where((item) => item.status == 'Pending').length} pending today',
+        change: '$pendingTodayAppointments pending today',
         changeType: StatChangeType.neutral,
         icon: Icons.calendar_today,
         variant: StatVariant.info,

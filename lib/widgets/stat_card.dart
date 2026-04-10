@@ -34,7 +34,7 @@ class _StatCardState extends State<StatCard> {
   @override
   Widget build(BuildContext context) {
     final accent = _variantColor(widget.variant);
-    final accentBg = accent.withOpacity(0.12);
+    final accentBg = accent.withValues(alpha: 0.12);
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
@@ -62,81 +62,89 @@ class _StatCardState extends State<StatCard> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-              child: Row(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
                           widget.title,
                           style: TextStyle(
-                            fontSize: 14,
+                            fontSize: 13,
                             color: AppColors.mutedForeground,
                             fontWeight: FontWeight.w600,
                           ),
+                          maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          widget.value,
-                          style: const TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: -0.5,
+                      ),
+                      const SizedBox(width: 8),
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: _isHovered ? accent : accentBg,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: _isHovered
+                              ? [
+                                  BoxShadow(
+                                    color: accent.withValues(alpha: 0.4),
+                                    blurRadius: 12,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ]
+                              : [],
+                        ),
+                        child: Icon(
+                          widget.icon,
+                          size: 20,
+                          color: _isHovered ? Colors.white : accent,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    widget.value,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  if (widget.change != null) ...[
+                    const SizedBox(height: 6),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(top: 1),
+                          child: Icon(
+                            _changeIcon(widget.changeType),
+                            size: 14,
+                            color: _changeColor(widget.changeType),
                           ),
                         ),
-                        if (widget.change != null) ...[
-                          const SizedBox(height: 10),
-                          Row(
-                            children: [
-                              Icon(
-                                _changeIcon(widget.changeType),
-                                size: 16,
-                                color: _changeColor(widget.changeType),
-                              ),
-                              const SizedBox(width: 4),
-                              Expanded(
-                                child: Text(
-                                  widget.change!,
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.bold,
-                                    color: _changeColor(widget.changeType),
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            widget.change!,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: _changeColor(widget.changeType),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        ],
+                        ),
                       ],
                     ),
-                  ),
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: _isHovered ? accent : accentBg,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: _isHovered
-                          ? [
-                              BoxShadow(
-                                color: accent.withOpacity(0.4),
-                                blurRadius: 12,
-                                offset: const Offset(0, 4),
-                              ),
-                            ]
-                          : [],
-                    ),
-                    child: Icon(
-                      widget.icon,
-                      size: 24,
-                      color: _isHovered ? Colors.white : accent,
-                    ),
-                  ),
+                  ],
                 ],
               ),
             ),

@@ -4,7 +4,6 @@ import '../../auth/auth_provider.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_decorations.dart';
 import '../../../widgets/app_button.dart';
-import '../../../widgets/patient_layout.dart';
 import 'patient_settings_provider.dart';
 
 class PatientSettingsScreen extends StatelessWidget {
@@ -18,51 +17,48 @@ class PatientSettingsScreen extends StatelessWidget {
     final isDesktop = _isDesktop(context);
     final provider = context.watch<PatientSettingsProvider>();
 
-    return PatientLayout(
-      routeName: '/patient/settings',
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Preferences',
-            style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Preferences',
+          style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          'Personalize how you receive updates from your clinics.',
+          style: TextStyle(color: AppColors.mutedForeground, fontSize: 15),
+        ),
+        const SizedBox(height: 24),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: AppButton(
+            label: 'Sign Out',
+            icon: Icons.logout_rounded,
+            variant: AppButtonVariant.outline,
+            onPressed: () async {
+              await context.read<AuthProvider>().signOut();
+              if (context.mounted) {
+                Navigator.of(context).pushReplacementNamed('/auth');
+              }
+            },
           ),
-          const SizedBox(height: 6),
-          Text(
-            'Personalize how you receive updates from your clinics.',
-            style: TextStyle(color: AppColors.mutedForeground, fontSize: 15),
-          ),
-          const SizedBox(height: 24),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: AppButton(
-              label: 'Sign Out',
-              icon: Icons.logout_rounded,
-              variant: AppButtonVariant.outline,
-              onPressed: () async {
-                await context.read<AuthProvider>().signOut();
-                if (context.mounted) {
-                  Navigator.of(context).pushReplacementNamed('/auth');
-                }
-              },
-            ),
-          ),
-          const SizedBox(height: 24),
-          if (isDesktop)
-            Row(
-              children: [
-                Expanded(child: _NotificationCard(provider: provider)),
-                const SizedBox(width: 16),
-                Expanded(child: _PrivacyCard(provider: provider)),
-              ],
-            )
-          else ...[
-            _NotificationCard(provider: provider),
-            const SizedBox(height: 16),
-            _PrivacyCard(provider: provider),
-          ],
+        ),
+        const SizedBox(height: 24),
+        if (isDesktop)
+          Row(
+            children: [
+              Expanded(child: _NotificationCard(provider: provider)),
+              const SizedBox(width: 16),
+              Expanded(child: _PrivacyCard(provider: provider)),
+            ],
+          )
+        else ...[
+          _NotificationCard(provider: provider),
+          const SizedBox(height: 16),
+          _PrivacyCard(provider: provider),
         ],
-      ),
+      ],
     );
   }
 }

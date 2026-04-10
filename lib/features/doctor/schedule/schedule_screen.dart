@@ -6,7 +6,6 @@ import '../../../shared/appointments_repository.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_decorations.dart';
 import '../../../widgets/app_button.dart';
-import '../../../widgets/dashboard_layout.dart';
 import '../../../widgets/mobile_header.dart';
 import '../patients/patients_provider.dart';
 import '../queue/queue_provider.dart';
@@ -234,9 +233,7 @@ class ScheduleScreen extends StatelessWidget {
     final selectedDate = provider.selectedDate;
     final appointments = provider.appointmentsForDate(doctorId);
 
-    return DashboardLayout(
-      routeName: '/doctor/appointments',
-      child: Column(
+    return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (!isDesktop)
@@ -335,7 +332,6 @@ class ScheduleScreen extends StatelessWidget {
           else
             _AppointmentsList(appointments: appointments),
         ],
-      ),
     );
   }
 }

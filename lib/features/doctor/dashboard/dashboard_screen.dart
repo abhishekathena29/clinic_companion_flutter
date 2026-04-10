@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import '../../../shared/appointments_repository.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_decorations.dart';
-import '../../../widgets/dashboard_layout.dart';
 import '../../../widgets/header.dart';
 import '../../../widgets/mobile_header.dart';
 import '../../../widgets/stat_card.dart';
@@ -36,13 +35,15 @@ class DashboardScreen extends StatelessWidget {
     final patientIds = appointments.map((item) => item.patientId).toSet();
     final patients =
         repository.patients
-            .where((patient) => patientIds.contains(patient.id))
+            .where(
+              (patient) =>
+                  patientIds.contains(patient.id) ||
+                  patientIds.contains(patient.userId),
+            )
             .toList()
           ..sort((a, b) => b.lastVisit.compareTo(a.lastVisit));
 
-    return DashboardLayout(
-      routeName: '/doctor',
-      child: Column(
+    return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (!isDesktop)
@@ -50,26 +51,37 @@ class DashboardScreen extends StatelessWidget {
           if (isDesktop)
             Header(title: '$greeting, $doctorName', subtitle: today),
           const SizedBox(height: 16),
-          GridView.count(
-            crossAxisCount: isDesktop ? 4 : 2,
-            mainAxisSpacing: isDesktop ? 24 : 12,
-            crossAxisSpacing: isDesktop ? 24 : 12,
-            childAspectRatio: isDesktop ? 1.6 : 1.35,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            children: provider
-                .statsForDoctor(doctorId)
-                .map(
-                  (stat) => StatCard(
-                    title: stat.title,
-                    value: stat.value,
-                    change: stat.change,
-                    changeType: stat.changeType,
-                    icon: stat.icon,
-                    variant: stat.variant,
-                  ),
-                )
-                .toList(),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final crossAxisCount = isDesktop
+                  ? (constraints.maxWidth >= 1180 ? 4 : 2)
+                  : 2;
+              final ratio = isDesktop
+                  ? (constraints.maxWidth >= 1180 ? 2.4 : 2.2)
+                  : 1.6;
+
+              return GridView.count(
+                crossAxisCount: crossAxisCount,
+                mainAxisSpacing: isDesktop ? 16 : 10,
+                crossAxisSpacing: isDesktop ? 16 : 10,
+                childAspectRatio: ratio,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                children: provider
+                    .statsForDoctor(doctorId)
+                    .map(
+                      (stat) => StatCard(
+                        title: stat.title,
+                        value: stat.value,
+                        change: stat.change,
+                        changeType: stat.changeType,
+                        icon: stat.icon,
+                        variant: stat.variant,
+                      ),
+                    )
+                    .toList(),
+              );
+            },
           ),
           const SizedBox(height: 24),
           if (isDesktop)
@@ -93,7 +105,6 @@ class DashboardScreen extends StatelessWidget {
           const SizedBox(height: 24),
           _RecentPatientsCard(patients: patients.take(5).toList()),
         ],
-      ),
     );
   }
 }

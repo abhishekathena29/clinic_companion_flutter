@@ -6,7 +6,6 @@ import '../../../shared/appointments_repository.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_decorations.dart';
 import '../../../widgets/app_button.dart';
-import '../../../widgets/patient_layout.dart';
 import '../doctors/patient_doctors_provider.dart';
 import 'patient_appointments_provider.dart';
 
@@ -163,73 +162,70 @@ class PatientAppointmentsScreen extends StatelessWidget {
 
     final appointments = provider.upcomingAppointmentsFor(patientId);
 
-    return PatientLayout(
-      routeName: '/patient/appointments',
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Appointments',
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900),
-              ),
-              AppButton(
-                label: 'Request Slot',
-                icon: Icons.add_rounded,
-                onPressed: () => _showBookingDialog(
-                  context,
-                  patientId: patientId,
-                  patientName: patientName,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Track requested and confirmed appointments.',
-            style: TextStyle(color: AppColors.mutedForeground, fontSize: 15),
-          ),
-          const SizedBox(height: 24),
-          if (appointments.isEmpty)
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: AppDecorations.card(),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.event_busy_rounded,
-                    color: AppColors.mutedForeground,
-                  ),
-                  const SizedBox(width: 12),
-                  const Expanded(child: Text('No appointment requests yet.')),
-                  AppButton(
-                    label: 'Book',
-                    size: AppButtonSize.small,
-                    onPressed: () => _showBookingDialog(
-                      context,
-                      patientId: patientId,
-                      patientName: patientName,
-                    ),
-                  ),
-                ],
-              ),
-            )
-          else
-            GridView.count(
-              crossAxisCount: isDesktop ? 2 : 1,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-              childAspectRatio: isDesktop ? 2.6 : 1.9,
-              children: appointments.map((appointment) {
-                return _AppointmentTile(appointment: appointment);
-              }).toList(),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Appointments',
+              style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900),
             ),
-        ],
-      ),
+            AppButton(
+              label: 'Request Slot',
+              icon: Icons.add_rounded,
+              onPressed: () => _showBookingDialog(
+                context,
+                patientId: patientId,
+                patientName: patientName,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Track requested and confirmed appointments.',
+          style: TextStyle(color: AppColors.mutedForeground, fontSize: 15),
+        ),
+        const SizedBox(height: 24),
+        if (appointments.isEmpty)
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: AppDecorations.card(),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.event_busy_rounded,
+                  color: AppColors.mutedForeground,
+                ),
+                const SizedBox(width: 12),
+                const Expanded(child: Text('No appointment requests yet.')),
+                AppButton(
+                  label: 'Book',
+                  size: AppButtonSize.small,
+                  onPressed: () => _showBookingDialog(
+                    context,
+                    patientId: patientId,
+                    patientName: patientName,
+                  ),
+                ),
+              ],
+            ),
+          )
+        else
+          GridView.count(
+            crossAxisCount: isDesktop ? 2 : 1,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 16,
+            childAspectRatio: isDesktop ? 2.6 : 1.9,
+            children: appointments.map((appointment) {
+              return _AppointmentTile(appointment: appointment);
+            }).toList(),
+          ),
+      ],
     );
   }
 }

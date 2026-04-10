@@ -6,14 +6,17 @@ import 'user_type.dart';
 
 class AuthProvider extends ChangeNotifier {
   AuthProvider() {
-    _subscription = _auth.authStateChanges().listen((user) {
+    _subscription = _auth.authStateChanges().listen((user) async {
       _user = user;
       if (user != null) {
-        _loadUserProfile(user);
+        await _loadUserProfile(user);
       } else {
         _userType = null;
         _profileName = '';
+        _profileClinic = '';
+        _profileSpecialty = '';
       }
+      _isInitializing = false;
       notifyListeners();
     });
   }
@@ -26,6 +29,7 @@ class AuthProvider extends ChangeNotifier {
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
   bool _isLoading = false;
+  bool _isInitializing = true;
   String? _error;
 
   String _name = '';
@@ -35,6 +39,8 @@ class AuthProvider extends ChangeNotifier {
   UserType _selectedType = UserType.doctor;
   UserType? _userType;
   String _profileName = '';
+  String _profileClinic = '';
+  String _profileSpecialty = '';
 
   User? _user;
 
@@ -42,12 +48,15 @@ class AuthProvider extends ChangeNotifier {
   bool get obscurePassword => _obscurePassword;
   bool get obscureConfirm => _obscureConfirm;
   bool get isLoading => _isLoading;
+  bool get isInitializing => _isInitializing;
   String? get error => _error;
   User? get user => _user;
   UserType get selectedType => _selectedType;
   UserType? get userType => _userType;
   String get profileName =>
       _profileName.isEmpty ? (_user?.displayName ?? '') : _profileName;
+  String get profileClinic => _profileClinic;
+  String get profileSpecialty => _profileSpecialty;
   bool get isAuthenticated => _user != null;
 
   String get name => _name;
@@ -215,6 +224,54 @@ class AuthProvider extends ChangeNotifier {
     await _auth.signOut();
     _userType = null;
     _profileName = '';
+    _profileClinic = '';
+    _profileSpecialty = '';
+    notifyListeners();
+  }
+
+  Future<void> updateDoctorProfile({
+    required String name,
+    required String clinic,
+    String? specialty,
+  }) async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    final trimmedName = name.trim();
+    final trimmedClinic = clinic.trim();
+    final trimmedSpecialty = specialty?.trim();
+
+    _setLoading(true);
+    _error = null;
+    try {
+      if (trimmedName.isNotEmpty && trimmedName != user.displayName) {
+        await user.updateDisplayName(trimmedName);
+      }
+
+      await _firestore.collection('users').doc(user.uid).set({
+        'name': trimmedName.isEmpty
+            ? (_profileName.isEmpty ? 'Doctor' : _profileName)
+            : trimmedName,
+        'clinic': trimmedClinic,
+        if (trimmedSpecialty != null && trimmedSpecialty.isNotEmpty)
+          'specialty': trimmedSpecialty,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+
+      if (trimmedName.isNotEmpty) {
+        _profileName = trimmedName;
+      }
+      _profileClinic = trimmedClinic;
+      if (trimmedSpecialty != null && trimmedSpecialty.isNotEmpty) {
+        _profileSpecialty = trimmedSpecialty;
+      }
+      notifyListeners();
+    } on FirebaseException catch (e) {
+      _error = e.message ?? 'Unable to update profile.';
+      notifyListeners();
+    } finally {
+      _setLoading(false);
+    }
   }
 
   Future<String?> sendPasswordReset() async {
@@ -247,10 +304,14 @@ class AuthProvider extends ChangeNotifier {
         final name = data?['name']?.toString() ?? user.displayName ?? '';
         final typeValue = data?['userType']?.toString();
         _profileName = name;
+        _profileClinic = data?['clinic']?.toString() ?? '';
+        _profileSpecialty = data?['specialty']?.toString() ?? '';
         _userType = UserTypeX.tryParse(typeValue) ?? _selectedType;
         _selectedType = _userType ?? _selectedType;
       } else {
         _profileName = user.displayName ?? '';
+        _profileClinic = '';
+        _profileSpecialty = '';
         _userType = _selectedType;
       }
 
