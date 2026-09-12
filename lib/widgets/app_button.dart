@@ -133,7 +133,6 @@ class AppButton extends StatelessWidget {
           child: _buildContent(),
         );
       case AppButtonVariant.primary:
-      default:
         style =
             ElevatedButton.styleFrom(
               elevation: 0,

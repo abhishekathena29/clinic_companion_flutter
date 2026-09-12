@@ -7,11 +7,15 @@ class MobileHeader extends StatefulWidget {
     required this.title,
     this.subtitle,
     this.showSearch = true,
+    this.searchController,
+    this.onSearchChanged,
   });
 
   final String title;
   final String? subtitle;
   final bool showSearch;
+  final TextEditingController? searchController;
+  final ValueChanged<String>? onSearchChanged;
 
   @override
   State<MobileHeader> createState() => _MobileHeaderState();
@@ -111,6 +115,8 @@ class _MobileHeaderState extends State<MobileHeader> {
                   borderRadius: BorderRadius.circular(AppColors.borderRadius),
                 ),
                 child: TextField(
+                  controller: widget.searchController,
+                  onChanged: widget.onSearchChanged,
                   autofocus: true,
                   decoration: InputDecoration(
                     hintText: 'Search patients, appointments...',

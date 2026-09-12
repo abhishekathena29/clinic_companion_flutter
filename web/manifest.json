@@ -1,6 +1,6 @@
 {
-    "name": "clinic_companion",
-    "short_name": "clinic_companion",
+    "name": "MentiFit",
+    "short_name": "MentiFit",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

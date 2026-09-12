@@ -161,7 +161,22 @@ class _OnboardingCard extends StatelessWidget {
                   ),
                 ),
               ),
-            _LogoChip(isLight: true, isCompact: isCompact),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'MentiFit',
+                  style: TextStyle(
+                    fontSize: isCompact ? 18 : 22,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.primary,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                _LogoChip(isLight: true, isCompact: isCompact),
+              ],
+            ),
             const Spacer(),
             Text(
               '${provider.currentStep + 1}/${provider.steps.length}',
@@ -246,7 +261,22 @@ class _DesktopIntro extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const _LogoChip(),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'MentiFit',
+                style: TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white,
+                  letterSpacing: -0.5,
+                ),
+              ),
+              const SizedBox(width: 14),
+              const _LogoChip(),
+            ],
+          ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -295,6 +325,22 @@ class _MobileIntro extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'MentiFit',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: -0.5,
+                ),
+              ),
+              const SizedBox(width: 10),
+              const _LogoChip(isCompact: true),
+            ],
+          ),
           const SizedBox(height: 14),
           Text(
             'Your health, scheduled in a click',
@@ -464,41 +510,45 @@ class _LogoChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: isCompact ? 14 : 16,
-        vertical: isCompact ? 9 : 10,
+        horizontal: isCompact ? 12 : 14,
+        vertical: isCompact ? 6 : 7,
       ),
       decoration: BoxDecoration(
         color: isLight
-            ? AppColors.primary
-            : Colors.white.withValues(alpha: 0.15),
+            ? AppColors.primary.withValues(alpha: 0.12)
+            : Colors.white.withValues(alpha: 0.16),
         borderRadius: BorderRadius.circular(999),
         border: Border.all(
           color: isLight
-              ? Colors.transparent
-              : Colors.white.withValues(alpha: 0.2),
+              ? AppColors.primary.withValues(alpha: 0.25)
+              : Colors.white.withValues(alpha: 0.25),
         ),
         boxShadow: isLight
             ? [
                 BoxShadow(
-                  color: AppColors.primary.withValues(alpha: 0.28),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
+                  color: AppColors.primary.withValues(alpha: 0.15),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
                 ),
               ]
             : [],
       ),
-      child: const Row(
+      child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.medical_services_rounded, size: 18, color: Colors.white),
-          SizedBox(width: 10),
+          Icon(
+            Icons.shield_outlined,
+            size: isCompact ? 14 : 16,
+            color: isLight ? AppColors.primary : Colors.white,
+          ),
+          const SizedBox(width: 6),
           Text(
             'Swasthya Vault',
             style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 13,
-              letterSpacing: 0.5,
+              color: isLight ? AppColors.primary : Colors.white,
+              fontWeight: FontWeight.w700,
+              fontSize: isCompact ? 11 : 12,
+              letterSpacing: 0.4,
             ),
           ),
         ],

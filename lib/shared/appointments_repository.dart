@@ -51,6 +51,9 @@ class Appointment {
     required this.clinic,
     this.consultationMode = kConsultationInPerson,
     this.meetingLink = '',
+    this.prescription = '',
+    this.doctorNotes = '',
+    this.prescriptionDate,
   });
 
   factory Appointment.fromFirestore(
@@ -71,10 +74,13 @@ class Appointment {
       status: data['status']?.toString() ?? 'Pending',
       date: date,
       specialty: data['specialty']?.toString() ?? 'General Medicine',
-      clinic: data['clinic']?.toString() ?? 'Medi-Connect',
+      clinic: data['clinic']?.toString() ?? 'MentiFit Clinic',
       consultationMode:
           data['consultationMode']?.toString() ?? kConsultationInPerson,
       meetingLink: data['meetingLink']?.toString() ?? '',
+      prescription: data['prescription']?.toString() ?? '',
+      doctorNotes: data['doctorNotes']?.toString() ?? '',
+      prescriptionDate: _parseFirestoreDate(data['prescriptionDate']),
     );
   }
 
@@ -92,8 +98,12 @@ class Appointment {
   final String clinic;
   final String consultationMode;
   final String meetingLink;
+  final String prescription;
+  final String doctorNotes;
+  final DateTime? prescriptionDate;
 
   bool get isVideoConsultation => consultationMode == kConsultationVideo;
+  bool get hasPrescription => prescription.isNotEmpty || doctorNotes.isNotEmpty;
 
   Map<String, dynamic> toMap() {
     return {
@@ -110,6 +120,10 @@ class Appointment {
       'clinic': clinic,
       'consultationMode': consultationMode,
       'meetingLink': meetingLink,
+      'prescription': prescription,
+      'doctorNotes': doctorNotes,
+      if (prescriptionDate != null)
+        'prescriptionDate': Timestamp.fromDate(prescriptionDate!),
       'updatedAt': FieldValue.serverTimestamp(),
     };
   }
@@ -128,6 +142,10 @@ class DoctorProfile {
     required this.nextAvailable,
     required this.email,
     this.phone = '',
+    this.qualifications = '',
+    this.bio = '',
+    this.reviewCount = 0,
+    this.profileCompleted = false,
   });
 
   factory DoctorProfile.fromFirestore(
@@ -138,14 +156,18 @@ class DoctorProfile {
       id: doc.id,
       name: data['name']?.toString() ?? 'Doctor',
       specialty: data['specialty']?.toString() ?? 'General Medicine',
-      rating: (data['rating'] as num?)?.toDouble() ?? 0,
+      rating: (data['rating'] as num?)?.toDouble() ?? 0.0,
       experienceYears: (data['experienceYears'] as num?)?.toInt() ?? 0,
-      clinic: data['clinic']?.toString() ?? 'Medi-Connect',
+      clinic: data['clinic']?.toString() ?? 'MentiFit Clinic',
       location: data['location']?.toString() ?? '',
       fee: (data['fee'] as num?)?.toInt() ?? 0,
       nextAvailable: data['nextAvailable']?.toString() ?? '',
       email: data['email']?.toString() ?? '',
       phone: data['phone']?.toString() ?? '',
+      qualifications: data['qualifications']?.toString() ?? '',
+      bio: data['bio']?.toString() ?? '',
+      reviewCount: (data['reviewCount'] as num?)?.toInt() ?? 0,
+      profileCompleted: data['profileCompleted'] == true,
     );
   }
 
@@ -160,6 +182,65 @@ class DoctorProfile {
   final String nextAvailable;
   final String email;
   final String phone;
+  final String qualifications;
+  final String bio;
+  final int reviewCount;
+  final bool profileCompleted;
+}
+
+class DoctorReview {
+  const DoctorReview({
+    required this.id,
+    required this.doctorId,
+    required this.doctorName,
+    required this.patientId,
+    required this.patientName,
+    required this.rating,
+    required this.comment,
+    required this.createdAt,
+    this.appointmentId = '',
+  });
+
+  factory DoctorReview.fromFirestore(
+    DocumentSnapshot<Map<String, dynamic>> doc,
+  ) {
+    final data = doc.data() ?? <String, dynamic>{};
+    final created = _parseFirestoreDate(data['createdAt']) ?? DateTime.now();
+    return DoctorReview(
+      id: doc.id,
+      doctorId: data['doctorId']?.toString() ?? '',
+      doctorName: data['doctorName']?.toString() ?? 'Doctor',
+      patientId: data['patientId']?.toString() ?? '',
+      patientName: data['patientName']?.toString() ?? 'Patient',
+      rating: (data['rating'] as num?)?.toDouble() ?? 5.0,
+      comment: data['comment']?.toString() ?? '',
+      createdAt: created,
+      appointmentId: data['appointmentId']?.toString() ?? '',
+    );
+  }
+
+  final String id;
+  final String doctorId;
+  final String doctorName;
+  final String patientId;
+  final String patientName;
+  final double rating;
+  final String comment;
+  final DateTime createdAt;
+  final String appointmentId;
+
+  Map<String, dynamic> toMap() {
+    return {
+      'doctorId': doctorId,
+      'doctorName': doctorName,
+      'patientId': patientId,
+      'patientName': patientName,
+      'rating': rating,
+      'comment': comment,
+      'createdAt': Timestamp.fromDate(createdAt),
+      'appointmentId': appointmentId,
+    };
+  }
 }
 
 class Patient {
@@ -176,6 +257,11 @@ class Patient {
     required this.status,
     required this.userId,
     required this.email,
+    this.bloodGroup = '',
+    this.address = '',
+    this.emergencyContactName = '',
+    this.emergencyContactPhone = '',
+    this.allergies = const [],
   });
 
   factory Patient.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
@@ -198,6 +284,13 @@ class Patient {
       status: data['status']?.toString() ?? 'active',
       userId: data['userId']?.toString() ?? '',
       email: data['email']?.toString() ?? '',
+      bloodGroup: data['bloodGroup']?.toString() ?? '',
+      address: data['address']?.toString() ?? '',
+      emergencyContactName: data['emergencyContactName']?.toString() ?? '',
+      emergencyContactPhone: data['emergencyContactPhone']?.toString() ?? '',
+      allergies: ((data['allergies'] as List?) ?? const [])
+          .map((value) => value.toString())
+          .toList(),
     );
   }
 
@@ -213,6 +306,11 @@ class Patient {
   final String status;
   final String userId;
   final String email;
+  final String bloodGroup;
+  final String address;
+  final String emergencyContactName;
+  final String emergencyContactPhone;
+  final List<String> allergies;
 
   Map<String, dynamic> toMap() {
     return {
@@ -227,6 +325,11 @@ class Patient {
       'status': status,
       'userId': userId,
       'email': email,
+      'bloodGroup': bloodGroup,
+      'address': address,
+      'emergencyContactName': emergencyContactName,
+      'emergencyContactPhone': emergencyContactPhone,
+      'allergies': allergies,
       'updatedAt': FieldValue.serverTimestamp(),
     };
   }
@@ -387,7 +490,10 @@ class AppointmentsRepository extends ChangeNotifier {
         .where('userType', isEqualTo: 'doctor')
         .snapshots()
         .listen((snapshot) {
-          _doctors = snapshot.docs.map(DoctorProfile.fromFirestore).toList()
+          _allDoctors = snapshot.docs.map(DoctorProfile.fromFirestore).toList();
+          _doctors = _allDoctors
+              .where((doc) => doc.experienceYears > 0 || doc.profileCompleted)
+              .toList()
             ..sort((a, b) => a.name.compareTo(b.name));
           notifyListeners();
         });
@@ -426,6 +532,15 @@ class AppointmentsRepository extends ChangeNotifier {
               snapshot.docs.map(HealthDocument.fromFirestore).toList();
           notifyListeners();
         });
+
+    _reviewsSubscription = _firestore
+        .collection('doctor_reviews')
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .listen((snapshot) {
+          _reviews = snapshot.docs.map(DoctorReview.fromFirestore).toList();
+          notifyListeners();
+        });
   }
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -437,18 +552,33 @@ class AppointmentsRepository extends ChangeNotifier {
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _queueSubscription;
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>?
   _documentSubscription;
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>?
+  _reviewsSubscription;
 
+  List<DoctorProfile> _allDoctors = const [];
   List<DoctorProfile> _doctors = const [];
   List<Patient> _patients = const [];
   List<Appointment> _appointments = const [];
   List<QueueEntry> _queue = const [];
   List<HealthDocument> _documents = const [];
+  List<DoctorReview> _reviews = const [];
 
   List<DoctorProfile> get doctors => List.unmodifiable(_doctors);
+  List<DoctorProfile> get allDoctors => List.unmodifiable(_allDoctors);
   List<Patient> get patients => List.unmodifiable(_patients);
   List<Appointment> get all => List.unmodifiable(_appointments);
   List<QueueEntry> get queue => List.unmodifiable(_queue);
   List<HealthDocument> get documents => List.unmodifiable(_documents);
+  List<DoctorReview> get reviews => List.unmodifiable(_reviews);
+
+  List<DoctorReview> reviewsForDoctor(String doctorId) {
+    return _reviews.where((r) => r.doctorId == doctorId).toList();
+  }
+
+  bool isAppointmentReviewed(String appointmentId) {
+    if (appointmentId.isEmpty) return false;
+    return _reviews.any((r) => r.appointmentId == appointmentId);
+  }
 
   List<HealthDocument> documentsForPatient(String patientId) {
     return _documents
@@ -476,6 +606,9 @@ class AppointmentsRepository extends ChangeNotifier {
 
   DoctorProfile? doctorById(String? doctorId) {
     if (doctorId == null || doctorId.isEmpty) return null;
+    for (final doctor in _allDoctors) {
+      if (doctor.id == doctorId) return doctor;
+    }
     for (final doctor in _doctors) {
       if (doctor.id == doctorId) return doctor;
     }
@@ -521,6 +654,11 @@ class AppointmentsRepository extends ChangeNotifier {
     String status = 'active',
     String userId = '',
     String email = '',
+    String bloodGroup = '',
+    String address = '',
+    String emergencyContactName = '',
+    String emergencyContactPhone = '',
+    List<String> allergies = const [],
   }) async {
     final doc = _firestore.collection('patients').doc();
     final nextIndex = (_patients.length + 1).toString().padLeft(3, '0');
@@ -539,6 +677,11 @@ class AppointmentsRepository extends ChangeNotifier {
       status: status,
       userId: userId,
       email: email,
+      bloodGroup: bloodGroup,
+      address: address,
+      emergencyContactName: emergencyContactName,
+      emergencyContactPhone: emergencyContactPhone,
+      allergies: allergies,
     );
 
     await doc.set({
@@ -630,6 +773,37 @@ class AppointmentsRepository extends ChangeNotifier {
     }, SetOptions(merge: true));
   }
 
+  Future<void> updateAppointmentStatus(
+    String appointmentId,
+    String status,
+  ) async {
+    await _firestore.collection('appointments').doc(appointmentId).set({
+      'status': status,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
+  Future<void> saveAppointmentPrescription({
+    required String appointmentId,
+    required String prescription,
+    required String doctorNotes,
+    bool markCompleted = true,
+  }) async {
+    final updateData = <String, dynamic>{
+      'prescription': prescription.trim(),
+      'doctorNotes': doctorNotes.trim(),
+      'prescriptionDate': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    };
+    if (markCompleted) {
+      updateData['status'] = 'Completed';
+    }
+    await _firestore.collection('appointments').doc(appointmentId).set(
+      updateData,
+      SetOptions(merge: true),
+    );
+  }
+
   Future<void> addToQueue({
     required String doctorId,
     required String patientName,
@@ -709,6 +883,48 @@ class AppointmentsRepository extends ChangeNotifier {
     await _firestore.collection('health_documents').doc(documentId).delete();
   }
 
+  Future<void> addDoctorReview({
+    required String doctorId,
+    required String doctorName,
+    required String patientId,
+    required String patientName,
+    required double rating,
+    required String comment,
+    String? appointmentId,
+  }) async {
+    final newReview = DoctorReview(
+      id: '',
+      doctorId: doctorId,
+      doctorName: doctorName,
+      patientId: patientId,
+      patientName: patientName,
+      rating: rating,
+      comment: comment,
+      createdAt: DateTime.now(),
+      appointmentId: appointmentId ?? '',
+    );
+    await _firestore.collection('doctor_reviews').add(newReview.toMap());
+
+    // Calculate new aggregate rating for doctor
+    final existingReviews = _reviews.where((r) => r.doctorId == doctorId).toList();
+    final allRatings = [...existingReviews.map((r) => r.rating), rating];
+    final avgRating = (allRatings.reduce((a, b) => a + b) / allRatings.length);
+    final count = allRatings.length;
+
+    await _firestore.collection('users').doc(doctorId).set({
+      'rating': double.parse(avgRating.toStringAsFixed(1)),
+      'reviewCount': count,
+    }, SetOptions(merge: true));
+
+    // If an appointment ID was provided, mark it as reviewed
+    if (appointmentId != null && appointmentId.isNotEmpty) {
+      await _firestore.collection('appointments').doc(appointmentId).set({
+        'reviewed': true,
+        'rating': rating,
+      }, SetOptions(merge: true));
+    }
+  }
+
   @override
   void dispose() {
     _doctorSubscription?.cancel();
@@ -716,6 +932,7 @@ class AppointmentsRepository extends ChangeNotifier {
     _appointmentSubscription?.cancel();
     _queueSubscription?.cancel();
     _documentSubscription?.cancel();
+    _reviewsSubscription?.cancel();
     super.dispose();
   }
 }

@@ -18,7 +18,7 @@ class Sidebar extends StatelessWidget {
     final auth = context.watch<AuthProvider>();
     final name = auth.profileName.isEmpty ? 'Doctor' : auth.profileName;
     final clinic = auth.profileClinic.isEmpty
-        ? 'Medi-Connect'
+        ? 'MentiFit'
         : auth.profileClinic;
     final initials = name
         .split(' ')
@@ -73,7 +73,7 @@ class Sidebar extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'Medi-Connect',
+                        'MentiFit',
                         style: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
@@ -115,79 +115,24 @@ class Sidebar extends StatelessWidget {
                       onTap: () => onSelected(1),
                     ),
                     _NavItem(
-                      label: 'Queue',
-                      icon: Icons.list_alt_rounded,
+                      label: 'Schedule & Queue',
+                      icon: Icons.calendar_month_rounded,
                       isActive: currentIndex == 2,
                       onTap: () => onSelected(2),
                     ),
                     _NavItem(
-                      label: 'Schedule',
-                      icon: Icons.calendar_month_rounded,
+                      label: 'Documents',
+                      icon: Icons.folder_shared_rounded,
                       isActive: currentIndex == 3,
                       onTap: () => onSelected(3),
                     ),
                     _NavItem(
-                      label: 'Reports',
-                      icon: Icons.insert_chart_rounded,
+                      label: 'Settings',
+                      icon: Icons.settings_rounded,
                       isActive: currentIndex == 4,
                       onTap: () => onSelected(4),
                     ),
-                    _NavItem(
-                      label: 'Documents',
-                      icon: Icons.folder_shared_rounded,
-                      isActive: currentIndex == 5,
-                      onTap: () => onSelected(5),
-                    ),
-                    _NavItem(
-                      label: 'Settings',
-                      icon: Icons.settings_rounded,
-                      isActive: currentIndex == 6,
-                      onTap: () => onSelected(6),
-                    ),
                   ],
-                ),
-              ),
-            ),
-            const Divider(color: Color.fromRGBO(255, 255, 255, 0.1), height: 1),
-            Padding(
-              padding: const EdgeInsets.all(24),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () {},
-                  borderRadius: BorderRadius.circular(AppColors.borderRadius),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 16,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(
-                        AppColors.borderRadius,
-                      ),
-                      border: Border.all(color: Colors.white.withOpacity(0.15)),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
-                        Icon(
-                          Icons.qr_code_scanner_rounded,
-                          size: 20,
-                          color: Colors.white,
-                        ),
-                        SizedBox(width: 10),
-                        Text(
-                          'Scan Patient QR',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
                 ),
               ),
             ),

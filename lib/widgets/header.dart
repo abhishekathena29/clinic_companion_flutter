@@ -3,10 +3,26 @@ import '../theme/app_colors.dart';
 import 'app_button.dart';
 
 class Header extends StatelessWidget {
-  const Header({super.key, required this.title, this.subtitle});
+  const Header({
+    super.key,
+    required this.title,
+    this.subtitle,
+    this.showSearch = true,
+    this.searchHint = 'Search patients, appointments...',
+    this.searchController,
+    this.onSearchChanged,
+    this.showNewPatient = false,
+    this.onNewPatient,
+  });
 
   final String title;
   final String? subtitle;
+  final bool showSearch;
+  final String searchHint;
+  final TextEditingController? searchController;
+  final ValueChanged<String>? onSearchChanged;
+  final bool showNewPatient;
+  final VoidCallback? onNewPatient;
 
   @override
   Widget build(BuildContext context) {
@@ -73,8 +89,10 @@ class Header extends StatelessWidget {
                         ],
                       ),
                       child: TextField(
+                        controller: searchController,
+                        onChanged: onSearchChanged,
                         decoration: InputDecoration(
-                          hintText: 'Search patients, appointments...',
+                          hintText: searchHint,
                           hintStyle: TextStyle(
                             color: AppColors.mutedForeground,
                             fontSize: 14,
@@ -138,8 +156,14 @@ class Header extends StatelessWidget {
                     ],
                   ),
                 ),
-                const SizedBox(width: 16),
-                const AppButton(label: 'New Patient', icon: Icons.add_rounded),
+                if (showNewPatient) ...[
+                  const SizedBox(width: 16),
+                  AppButton(
+                    label: 'New Patient',
+                    icon: Icons.add_rounded,
+                    onPressed: onNewPatient,
+                  ),
+                ],
               ],
             ),
           ],

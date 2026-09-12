@@ -6,8 +6,15 @@ import '../../widgets/app_button.dart';
 import 'auth_provider.dart';
 import 'user_type.dart';
 
-class AuthScreen extends StatelessWidget {
+class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
+
+  @override
+  State<AuthScreen> createState() => _AuthScreenState();
+}
+
+class _AuthScreenState extends State<AuthScreen> {
+  final _formKey = GlobalKey<FormState>();
 
   bool _isDesktop(BuildContext context) =>
       MediaQuery.of(context).size.width >= 900;
@@ -44,8 +51,8 @@ class AuthScreen extends StatelessWidget {
                             children: [
                               Text(
                                 provider.isLogin
-                                    ? 'Welcome back to\nMedi-Connect'
-                                    : 'Join\nMedi-Connect',
+                                    ? 'Welcome back to\nMentiFit'
+                                    : 'Join\nMentiFit',
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 48,
@@ -84,82 +91,117 @@ class AuthScreen extends StatelessWidget {
                     constraints: const BoxConstraints(maxWidth: 460),
                     decoration: AppDecorations.card(),
                     padding: const EdgeInsets.all(40),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (!isDesktop) ...[
-                          _BrandChip(isLight: true),
-                          const SizedBox(height: 24),
-                        ],
-                        Text(
-                          provider.isLogin ? 'Sign in' : 'Create your account',
-                          style: const TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          provider.isLogin
-                              ? 'Start where you left off in seconds.'
-                              : 'Set up your clinic workspace in minutes.',
-                          style: TextStyle(
-                            color: AppColors.mutedForeground,
-                            fontSize: 15,
-                          ),
-                        ),
-                        const SizedBox(height: 32),
-                        if (!provider.isLogin) ...[
-                          _UserTypeSelector(
-                            selected: provider.selectedType,
-                            onChanged: provider.updateUserType,
-                          ),
-                          const SizedBox(height: 24),
-                        ],
-                        if (!provider.isLogin) ...[
-                          TextField(
-                            onChanged: provider.updateName,
-                            decoration: const InputDecoration(
-                              labelText: 'Full name',
+                    child: Form(
+                      key: _formKey,
+                      autovalidateMode: AutovalidateMode.onUserInteraction,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (!isDesktop) ...[
+                            _BrandChip(isLight: true),
+                            const SizedBox(height: 24),
+                          ],
+                          Text(
+                            provider.isLogin ? 'Sign in' : 'Create your account',
+                            style: const TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: -0.5,
                             ),
                           ),
-                          const SizedBox(height: 16),
-                        ],
-                        TextField(
-                          onChanged: provider.updateEmail,
-                          decoration: const InputDecoration(
-                            labelText: 'Email address',
+                          const SizedBox(height: 8),
+                          Text(
+                            provider.isLogin
+                                ? 'Enter your mobile number and 6-digit PIN.'
+                                : 'Set up your clinic account with phone & 6-digit PIN.',
+                            style: TextStyle(
+                              color: AppColors.mutedForeground,
+                              fontSize: 15,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 16),
-                        TextField(
-                          obscureText: provider.obscurePassword,
-                          onChanged: provider.updatePassword,
-                          decoration: InputDecoration(
-                            labelText: 'Password',
-                            suffixIcon: IconButton(
-                              onPressed: provider.togglePasswordVisibility,
-                              icon: Icon(
-                                provider.obscurePassword
-                                    ? Icons.visibility_off_rounded
-                                    : Icons.visibility_rounded,
-                                size: 20,
+                          const SizedBox(height: 32),
+                          if (!provider.isLogin) ...[
+                            _UserTypeSelector(
+                              selected: provider.selectedType,
+                              onChanged: provider.updateUserType,
+                            ),
+                            const SizedBox(height: 24),
+                          ],
+                          if (!provider.isLogin) ...[
+                            TextFormField(
+                              onChanged: provider.updateName,
+                              validator: (val) {
+                                if (provider.isLogin) return null;
+                                if (val == null || val.trim().isEmpty) {
+                                  return 'Please enter your full name';
+                                }
+                                if (val.trim().length < 2) {
+                                  return 'Name must be at least 2 characters';
+                                }
+                                if (!RegExp(r"^[a-zA-Z\s.'-]+$").hasMatch(val.trim())) {
+                                  return 'Please enter a valid name (letters only)';
+                                }
+                                return null;
+                              },
+                              decoration: const InputDecoration(
+                                labelText: 'Full name',
+                                prefixIcon: Icon(Icons.person_rounded),
                               ),
                             ),
+                            const SizedBox(height: 16),
+                          ],
+                          TextFormField(
+                            keyboardType: TextInputType.phone,
+                            maxLength: 10,
+                            onChanged: provider.updatePhone,
+                            validator: (val) {
+                              if (val == null || val.trim().isEmpty) {
+                                return 'Please enter your mobile number';
+                              }
+                              final digits = val.replaceAll(RegExp(r'[^0-9]'), '');
+                              if (digits.length != 10) {
+                                return 'Mobile number must be exactly 10 digits';
+                              }
+                              if (!RegExp(r'^[6-9]').hasMatch(digits)) {
+                                return 'Enter a valid 10-digit mobile number (starts with 6-9)';
+                              }
+                              return null;
+                            },
+                            decoration: const InputDecoration(
+                              counterText: '',
+                              labelText: 'Phone number',
+                              hintText: '10-digit mobile number',
+                              prefixIcon: Icon(Icons.phone_rounded),
+                            ),
                           ),
-                        ),
-                        if (!provider.isLogin) ...[
                           const SizedBox(height: 16),
-                          TextField(
-                            obscureText: provider.obscureConfirm,
-                            onChanged: provider.updateConfirmPassword,
+                          TextFormField(
+                            keyboardType: TextInputType.number,
+                            maxLength: 6,
+                            obscureText: provider.obscurePassword,
+                            onChanged: provider.updatePin,
+                            validator: (val) {
+                              if (val == null || val.trim().isEmpty) {
+                                return 'Please enter your 6-digit PIN';
+                              }
+                              final trimmed = val.trim();
+                              if (trimmed.length != 6) {
+                                return 'PIN must be exactly 6 digits';
+                              }
+                              if (!RegExp(r'^[0-9]{6}$').hasMatch(trimmed)) {
+                                return 'PIN must contain digits only';
+                              }
+                              return null;
+                            },
                             decoration: InputDecoration(
-                              labelText: 'Confirm password',
+                              counterText: '',
+                              labelText: provider.isLogin ? '6-digit PIN' : 'Set 6-digit PIN',
+                              hintText: '••••••',
+                              prefixIcon: const Icon(Icons.lock_rounded),
                               suffixIcon: IconButton(
-                                onPressed: provider.toggleConfirmVisibility,
+                                onPressed: provider.togglePasswordVisibility,
                                 icon: Icon(
-                                  provider.obscureConfirm
+                                  provider.obscurePassword
                                       ? Icons.visibility_off_rounded
                                       : Icons.visibility_rounded,
                                   size: 20,
@@ -167,99 +209,101 @@ class AuthScreen extends StatelessWidget {
                               ),
                             ),
                           ),
-                        ],
-                        const SizedBox(height: 24),
-                        if (provider.error != null)
-                          Container(
-                            margin: const EdgeInsets.only(bottom: 20),
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: AppColors.destructive.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: AppColors.destructive.withOpacity(0.3),
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.error_outline_rounded,
-                                  color: AppColors.destructive,
-                                  size: 20,
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    provider.error!,
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: AppColors.destructive,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                          if (!provider.isLogin) ...[
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              keyboardType: TextInputType.number,
+                              maxLength: 6,
+                              obscureText: provider.obscureConfirm,
+                              onChanged: provider.updateConfirmPin,
+                              validator: (val) {
+                                if (provider.isLogin) return null;
+                                if (val == null || val.trim().isEmpty) {
+                                  return 'Please confirm your 6-digit PIN';
+                                }
+                                if (val.trim() != provider.pin.trim()) {
+                                  return 'PINs do not match';
+                                }
+                                return null;
+                              },
+                              decoration: InputDecoration(
+                                counterText: '',
+                                labelText: 'Confirm 6-digit PIN',
+                                hintText: '••••••',
+                                prefixIcon: const Icon(Icons.lock_clock_rounded),
+                                suffixIcon: IconButton(
+                                  onPressed: provider.toggleConfirmVisibility,
+                                  icon: Icon(
+                                    provider.obscureConfirm
+                                        ? Icons.visibility_off_rounded
+                                        : Icons.visibility_rounded,
+                                    size: 20,
                                   ),
                                 ),
-                              ],
+                              ),
                             ),
-                          ),
-                        if (provider.isLogin) ...[
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: TextButton(
+                          ],
+                          const SizedBox(height: 24),
+                          if (provider.error != null)
+                            Container(
+                              margin: const EdgeInsets.only(bottom: 20),
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: AppColors.destructive.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: AppColors.destructive.withOpacity(0.3),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.error_outline_rounded,
+                                    color: AppColors.destructive,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      provider.error!,
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: AppColors.destructive,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          SizedBox(
+                            width: double.infinity,
+                            child: AppButton(
+                              size: AppButtonSize.large,
+                              label: provider.isLogin
+                                  ? 'Sign in'
+                                  : 'Create account',
+                              icon: provider.isLogin
+                                  ? Icons.login_rounded
+                                  : Icons.check_circle_rounded,
                               onPressed: provider.isLoading
                                   ? null
                                   : () async {
-                                      final messenger = ScaffoldMessenger.of(
-                                        context,
-                                      );
-                                      final message = await provider
-                                          .sendPasswordReset();
-                                      if (!context.mounted || message == null) {
+                                      if (!_formKey.currentState!.validate()) {
                                         return;
                                       }
-                                      messenger.showSnackBar(
-                                        SnackBar(content: Text(message)),
-                                      );
+                                      await provider.submit();
+                                      if (context.mounted &&
+                                          provider.isAuthenticated) {
+                                        Navigator.of(
+                                          context,
+                                        ).pushReplacementNamed(
+                                          provider.homeRoute,
+                                        );
+                                      }
                                     },
-                              style: TextButton.styleFrom(
-                                padding: EdgeInsets.zero,
-                                minimumSize: const Size(0, 0),
-                              ),
-                              child: Text(
-                                'Forgot password?',
-                                style: TextStyle(
-                                  color: AppColors.primary,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
                             ),
                           ),
-                          const SizedBox(height: 24),
-                        ],
-                        SizedBox(
-                          width: double.infinity,
-                          child: AppButton(
-                            size: AppButtonSize.large,
-                            label: provider.isLogin
-                                ? 'Sign in'
-                                : 'Create account',
-                            icon: provider.isLogin
-                                ? Icons.login_rounded
-                                : Icons.check_circle_rounded,
-                            onPressed: provider.isLoading
-                                ? null
-                                : () async {
-                                    await provider.submit();
-                                    if (context.mounted &&
-                                        provider.isAuthenticated) {
-                                      Navigator.of(
-                                        context,
-                                      ).pushReplacementNamed(
-                                        provider.homeRoute,
-                                      );
-                                    }
-                                  },
-                          ),
-                        ),
                         const SizedBox(height: 16),
                         if (provider.isLoading)
                           Center(
@@ -285,7 +329,10 @@ class AuthScreen extends StatelessWidget {
                               ),
                             ),
                             TextButton(
-                              onPressed: provider.toggleMode,
+                              onPressed: () {
+                                _formKey.currentState?.reset();
+                                provider.toggleMode();
+                              },
                               child: Text(
                                 provider.isLogin ? 'Create one' : 'Sign in',
                                 style: const TextStyle(
@@ -314,11 +361,12 @@ class AuthScreen extends StatelessWidget {
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 class _BrandChip extends StatelessWidget {
@@ -328,40 +376,54 @@ class _BrandChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(
-        color: isLight ? AppColors.primary : Colors.white.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(
-          color: isLight ? Colors.transparent : Colors.white.withOpacity(0.2),
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          'MentiFit',
+          style: TextStyle(
+            color: isLight ? AppColors.primary : Colors.white,
+            fontWeight: FontWeight.w900,
+            fontSize: isLight ? 22 : 24,
+            letterSpacing: -0.5,
+          ),
         ),
-        boxShadow: isLight
-            ? [
-                BoxShadow(
-                  color: AppColors.primary.withOpacity(0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ]
-            : [],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.medical_services_rounded, size: 18, color: Colors.white),
-          const SizedBox(width: 10),
-          Text(
-            'Swasthya Vault',
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 13,
-              letterSpacing: 0.5,
+        const SizedBox(width: 10),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: isLight
+                ? AppColors.primary.withOpacity(0.12)
+                : Colors.white.withOpacity(0.16),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: isLight
+                  ? AppColors.primary.withOpacity(0.25)
+                  : Colors.white.withOpacity(0.25),
             ),
           ),
-        ],
-      ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.shield_outlined,
+                size: 14,
+                color: isLight ? AppColors.primary : Colors.white,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'Swasthya Vault',
+                style: TextStyle(
+                  color: isLight ? AppColors.primary : Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 12,
+                  letterSpacing: 0.4,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

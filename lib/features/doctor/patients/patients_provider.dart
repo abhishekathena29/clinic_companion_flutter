@@ -55,6 +55,12 @@ class PatientsProvider extends ChangeNotifier {
     required String phone,
     required List<String> conditions,
     String status = 'active',
+    String email = '',
+    String bloodGroup = '',
+    String address = '',
+    String emergencyContactName = '',
+    String emergencyContactPhone = '',
+    List<String> allergies = const [],
   }) {
     return _repository.addPatient(
       name: name,
@@ -63,6 +69,12 @@ class PatientsProvider extends ChangeNotifier {
       phone: phone,
       conditions: conditions,
       status: status,
+      email: email,
+      bloodGroup: bloodGroup,
+      address: address,
+      emergencyContactName: emergencyContactName,
+      emergencyContactPhone: emergencyContactPhone,
+      allergies: allergies,
     );
   }
 

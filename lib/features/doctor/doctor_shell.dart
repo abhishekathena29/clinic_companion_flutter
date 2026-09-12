@@ -6,10 +6,34 @@ import '../../widgets/sidebar.dart';
 import 'dashboard/dashboard_screen.dart';
 import 'documents/doctor_documents_screen.dart';
 import 'patients/patients_screen.dart';
-import 'queue/queue_screen.dart';
-import 'reports/reports_screen.dart';
-import 'schedule/schedule_screen.dart';
+import 'schedule/schedule_queue_screen.dart';
 import 'settings/settings_screen.dart';
+
+class DoctorNavScope extends InheritedWidget {
+  const DoctorNavScope({
+    super.key,
+    required this.currentIndex,
+    required this.onSelectTab,
+    required super.child,
+  });
+
+  final int currentIndex;
+  final ValueChanged<int> onSelectTab;
+
+  static DoctorNavScope? maybeOf(BuildContext context) {
+    return context.dependOnInheritedWidgetOfExactType<DoctorNavScope>();
+  }
+
+  static DoctorNavScope of(BuildContext context) {
+    final scope = maybeOf(context);
+    assert(scope != null, 'No DoctorNavScope found in context');
+    return scope!;
+  }
+
+  @override
+  bool updateShouldNotify(DoctorNavScope oldWidget) =>
+      currentIndex != oldWidget.currentIndex;
+}
 
 class DoctorShell extends StatefulWidget {
   const DoctorShell({super.key});
@@ -21,24 +45,16 @@ class DoctorShell extends StatefulWidget {
 class _DoctorShellState extends State<DoctorShell> {
   int _currentIndex = 0;
 
-  // Page indices: 0=Dashboard, 1=Patients, 2=Queue, 3=Schedule, 4=Reports, 5=Documents, 6=Settings
+  // Page indices: 0=Dashboard, 1=Patients, 2=Schedule & Queue, 3=Documents, 4=Settings
   static const _pages = <Widget>[
     DashboardScreen(),
     PatientsScreen(),
-    QueueScreen(),
-    ScheduleScreen(),
-    ReportsScreen(),
+    ScheduleQueueScreen(),
     DoctorDocumentsScreen(),
     SettingsScreen(),
   ];
 
-  // Bottom nav shows 5 items; maps bottom-nav tap index → page index
-  static const _bottomNavToPage = [0, 1, 2, 5, 6];
-
-  int get _bottomNavIndex {
-    final idx = _bottomNavToPage.indexOf(_currentIndex);
-    return idx == -1 ? 0 : idx;
-  }
+  int get _bottomNavIndex => _currentIndex.clamp(0, _pages.length - 1);
 
   bool _isDesktop(BuildContext context) =>
       MediaQuery.of(context).size.width >= 768;
@@ -47,13 +63,16 @@ class _DoctorShellState extends State<DoctorShell> {
   Widget build(BuildContext context) {
     final isDesktop = _isDesktop(context);
 
-    return Scaffold(
+    return DoctorNavScope(
+      currentIndex: _currentIndex,
+      onSelectTab: (i) => setState(() => _currentIndex = i),
+      child: Scaffold(
       backgroundColor: AppColors.background,
       bottomNavigationBar: isDesktop
           ? null
           : AppBottomNav(
               currentIndex: _bottomNavIndex,
-              onTap: (i) => setState(() => _currentIndex = _bottomNavToPage[i]),
+              onTap: (i) => setState(() => _currentIndex = i),
               items: const [
                 AppBottomNavItem(
                   icon: Icons.dashboard_rounded,
@@ -64,8 +83,8 @@ class _DoctorShellState extends State<DoctorShell> {
                   label: 'Patients',
                 ),
                 AppBottomNavItem(
-                  icon: Icons.list_alt_rounded,
-                  label: 'Queue',
+                  icon: Icons.calendar_month_rounded,
+                  label: 'Schedule & Queue',
                 ),
                 AppBottomNavItem(
                   icon: Icons.folder_shared_rounded,
@@ -100,6 +119,7 @@ class _DoctorShellState extends State<DoctorShell> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

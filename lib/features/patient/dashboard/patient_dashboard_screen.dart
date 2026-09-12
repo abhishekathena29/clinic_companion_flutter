@@ -6,6 +6,7 @@ import '../../../shared/appointments_repository.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_decorations.dart';
 import '../../../widgets/app_button.dart';
+import '../../../widgets/communication_sheet.dart';
 import '../../../widgets/video_consultation_actions.dart';
 import '../patient_shell.dart';
 import 'patient_dashboard_provider.dart';
@@ -303,13 +304,61 @@ class _AppointmentCard extends StatelessWidget {
               ),
             ],
           ),
-          if (appointment.isVideoConsultation) ...[
-            const SizedBox(height: 12),
-            VideoConsultationActions(
-              appointment: appointment,
-              contactPhone: doctor?.phone ?? '',
-            ),
-          ],
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              if (appointment.isVideoConsultation)
+                Expanded(
+                  child: VideoConsultationActions(
+                    appointment: appointment,
+                    contactPhone: doctor?.phone ?? '',
+                  ),
+                )
+              else
+                const Spacer(),
+              InkWell(
+                borderRadius: BorderRadius.circular(10),
+                onTap: () {
+                  CommunicationSheet.show(
+                    context,
+                    recipientName: appointment.doctor,
+                    recipientRole: 'Doctor',
+                    phone: doctor?.phone ?? '',
+                    isScheduled: appointment.status.toLowerCase() != 'cancelled',
+                    scheduledTime:
+                        '${DateFormat('d MMM').format(appointment.date)} at ${appointment.time}',
+                    statusText: '${appointment.specialty} • ${appointment.clinic}',
+                    meetingLink: appointment.meetingLink,
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF25D366).withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: const Color(0xFF25D366).withOpacity(0.35),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                      Icon(Icons.phone_in_talk_rounded, size: 14, color: Color(0xFF25D366)),
+                      SizedBox(width: 6),
+                      Text(
+                        'Call / WhatsApp',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF25D366),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );

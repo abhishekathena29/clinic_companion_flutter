@@ -33,6 +33,9 @@ class AuthProvider extends ChangeNotifier {
   String? _error;
 
   String _name = '';
+  String _phone = '';
+  String _pin = '';
+  String _confirmPin = '';
   String _email = '';
   String _password = '';
   String _confirmPassword = '';
@@ -42,6 +45,11 @@ class AuthProvider extends ChangeNotifier {
   String _profileClinic = '';
   String _profileSpecialty = '';
   String _profilePhone = '';
+  int _profileExperienceYears = 0;
+  String _profileQualifications = '';
+  int _profileFee = 0;
+  String _profileBio = '';
+  bool _profileCompleted = false;
 
   User? _user;
 
@@ -58,13 +66,31 @@ class AuthProvider extends ChangeNotifier {
       _profileName.isEmpty ? (_user?.displayName ?? '') : _profileName;
   String get profileClinic => _profileClinic;
   String get profileSpecialty => _profileSpecialty;
-  String get profilePhone => _profilePhone;
+  String get profilePhone => _profilePhone.isNotEmpty ? _profilePhone : _phone;
+  int get profileExperienceYears => _profileExperienceYears;
+  String get profileQualifications => _profileQualifications;
+  int get profileFee => _profileFee;
+  String get profileBio => _profileBio;
+  bool get isProfileCompleted =>
+      _profileCompleted || (_profileExperienceYears > 0 && _profileSpecialty.isNotEmpty);
   bool get isAuthenticated => _user != null;
 
   String get name => _name;
+  String get phone => _phone;
+  String get pin => _pin;
+  String get confirmPin => _confirmPin;
   String get email => _email;
   String get password => _password;
   String get confirmPassword => _confirmPassword;
+
+  static String cleanPhone(String raw) {
+    return raw.replaceAll(RegExp(r'[^0-9]'), '');
+  }
+
+  static String phoneToEmail(String raw) {
+    final cleaned = cleanPhone(raw);
+    return '$cleaned@mentifit.com';
+  }
 
   UserType get effectiveUserType => _userType ?? _selectedType;
   String get homeRoute =>
@@ -97,6 +123,24 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void updatePhone(String value) {
+    _phone = value.trim();
+    _email = phoneToEmail(_phone);
+    notifyListeners();
+  }
+
+  void updatePin(String value) {
+    _pin = value.trim();
+    _password = _pin;
+    notifyListeners();
+  }
+
+  void updateConfirmPin(String value) {
+    _confirmPin = value.trim();
+    _confirmPassword = _confirmPin;
+    notifyListeners();
+  }
+
   void updateEmail(String value) {
     _email = value.trim();
     notifyListeners();
@@ -104,11 +148,13 @@ class AuthProvider extends ChangeNotifier {
 
   void updatePassword(String value) {
     _password = value;
+    _pin = value;
     notifyListeners();
   }
 
   void updateConfirmPassword(String value) {
     _confirmPassword = value;
+    _confirmPin = value;
     notifyListeners();
   }
 
@@ -127,21 +173,42 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> signIn() async {
     _error = null;
-    if (_email.isEmpty || _password.isEmpty) {
-      _error = 'Email and password are required.';
+    final cleaned = cleanPhone(_phone);
+    if (cleaned.isEmpty) {
+      _error = 'Phone number is required.';
+      notifyListeners();
+      return;
+    }
+    if (cleaned.length < 10) {
+      _error = 'Please enter a valid phone number (at least 10 digits).';
+      notifyListeners();
+      return;
+    }
+    if (_pin.isEmpty) {
+      _error = '6-digit PIN is required.';
+      notifyListeners();
+      return;
+    }
+    if (_pin.length != 6) {
+      _error = 'PIN must be exactly 6 digits.';
       notifyListeners();
       return;
     }
 
     _setLoading(true);
     try {
+      final emailAddress = phoneToEmail(_phone);
       final result = await _auth.signInWithEmailAndPassword(
-        email: _email,
-        password: _password,
+        email: emailAddress,
+        password: _pin,
       );
       await _loadUserProfile(result.user);
     } on FirebaseAuthException catch (e) {
-      _error = e.message ?? 'Unable to sign in. Please try again.';
+      if (e.code == 'user-not-found' || e.code == 'wrong-password' || e.code == 'invalid-credential') {
+        _error = 'Invalid phone number or 6-digit PIN.';
+      } else {
+        _error = e.message ?? 'Unable to sign in. Please try again.';
+      }
     } finally {
       _setLoading(false);
     }
@@ -154,34 +221,47 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
       return;
     }
-    if (_email.isEmpty || _password.isEmpty) {
-      _error = 'Email and password are required.';
+    final cleaned = cleanPhone(_phone);
+    if (cleaned.isEmpty) {
+      _error = 'Phone number is required.';
       notifyListeners();
       return;
     }
-    if (_password.length < 6) {
-      _error = 'Password must be at least 6 characters.';
+    if (cleaned.length < 10) {
+      _error = 'Please enter a valid phone number (at least 10 digits).';
       notifyListeners();
       return;
     }
-    if (_password != _confirmPassword) {
-      _error = 'Passwords do not match.';
+    if (_pin.isEmpty) {
+      _error = '6-digit PIN is required.';
+      notifyListeners();
+      return;
+    }
+    if (_pin.length != 6 || !RegExp(r'^[0-9]{6}$').hasMatch(_pin)) {
+      _error = 'PIN must be exactly 6 digits (numbers only).';
+      notifyListeners();
+      return;
+    }
+    if (_pin != _confirmPin) {
+      _error = 'PINs do not match.';
       notifyListeners();
       return;
     }
 
     _setLoading(true);
     try {
+      final emailAddress = phoneToEmail(_phone);
       final result = await _auth.createUserWithEmailAndPassword(
-        email: _email,
-        password: _password,
+        email: emailAddress,
+        password: _pin,
       );
       await result.user?.updateDisplayName(_name.trim());
       final userId = result.user?.uid;
       await _firestore.collection('users').doc(userId).set({
         'uid': userId,
         'name': _name.trim(),
-        'email': _email,
+        'email': emailAddress,
+        'phone': cleaned,
         'userType': _selectedType.value,
         'specialty': _selectedType == UserType.doctor
             ? 'General Medicine'
@@ -194,8 +274,8 @@ class AuthProvider extends ChangeNotifier {
           'patientCode':
               'SV-${DateTime.now().year}-${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}',
           'name': _name.trim(),
-          'email': _email,
-          'phone': '',
+          'email': emailAddress,
+          'phone': cleaned,
           'age': 0,
           'gender': 'O',
           'conditions': const <String>[],
@@ -208,7 +288,11 @@ class AuthProvider extends ChangeNotifier {
       }
       await _loadUserProfile(result.user);
     } on FirebaseAuthException catch (e) {
-      _error = e.message ?? 'Unable to create account. Please try again.';
+      if (e.code == 'email-already-in-use') {
+        _error = 'An account with this phone number already exists.';
+      } else {
+        _error = e.message ?? 'Unable to create account. Please try again.';
+      }
     } finally {
       _setLoading(false);
     }
@@ -221,6 +305,11 @@ class AuthProvider extends ChangeNotifier {
     _profileClinic = '';
     _profileSpecialty = '';
     _profilePhone = '';
+    _profileExperienceYears = 0;
+    _profileQualifications = '';
+    _profileFee = 0;
+    _profileBio = '';
+    _profileCompleted = false;
     notifyListeners();
   }
 
@@ -229,6 +318,11 @@ class AuthProvider extends ChangeNotifier {
     required String clinic,
     String? specialty,
     String? phone,
+    int? experienceYears,
+    String? qualifications,
+    int? fee,
+    String? bio,
+    bool? profileCompleted,
   }) async {
     final user = _auth.currentUser;
     if (user == null) return;
@@ -237,6 +331,8 @@ class AuthProvider extends ChangeNotifier {
     final trimmedClinic = clinic.trim();
     final trimmedSpecialty = specialty?.trim();
     final trimmedPhone = phone?.trim();
+    final trimmedQualifications = qualifications?.trim();
+    final trimmedBio = bio?.trim();
 
     _setLoading(true);
     _error = null;
@@ -244,6 +340,9 @@ class AuthProvider extends ChangeNotifier {
       if (trimmedName.isNotEmpty && trimmedName != user.displayName) {
         await user.updateDisplayName(trimmedName);
       }
+
+      final isCompleted = profileCompleted ??
+          ((experienceYears ?? _profileExperienceYears) > 0);
 
       await _firestore.collection('users').doc(user.uid).set({
         'name': trimmedName.isEmpty
@@ -253,6 +352,12 @@ class AuthProvider extends ChangeNotifier {
         if (trimmedSpecialty != null && trimmedSpecialty.isNotEmpty)
           'specialty': trimmedSpecialty,
         if (trimmedPhone != null) 'phone': trimmedPhone,
+        if (experienceYears != null) 'experienceYears': experienceYears,
+        if (trimmedQualifications != null)
+          'qualifications': trimmedQualifications,
+        if (fee != null) 'fee': fee,
+        if (trimmedBio != null) 'bio': trimmedBio,
+        'profileCompleted': isCompleted,
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
 
@@ -266,6 +371,19 @@ class AuthProvider extends ChangeNotifier {
       if (trimmedPhone != null) {
         _profilePhone = trimmedPhone;
       }
+      if (experienceYears != null) {
+        _profileExperienceYears = experienceYears;
+      }
+      if (trimmedQualifications != null) {
+        _profileQualifications = trimmedQualifications;
+      }
+      if (fee != null) {
+        _profileFee = fee;
+      }
+      if (trimmedBio != null) {
+        _profileBio = trimmedBio;
+      }
+      _profileCompleted = isCompleted;
       notifyListeners();
     } on FirebaseException catch (e) {
       _error = e.message ?? 'Unable to update profile.';
@@ -308,6 +426,13 @@ class AuthProvider extends ChangeNotifier {
         _profileClinic = data?['clinic']?.toString() ?? '';
         _profileSpecialty = data?['specialty']?.toString() ?? '';
         _profilePhone = data?['phone']?.toString() ?? '';
+        _profileExperienceYears =
+            (data?['experienceYears'] as num?)?.toInt() ?? 0;
+        _profileQualifications = data?['qualifications']?.toString() ?? '';
+        _profileFee = (data?['fee'] as num?)?.toInt() ?? 0;
+        _profileBio = data?['bio']?.toString() ?? '';
+        _profileCompleted = data?['profileCompleted'] == true ||
+            _profileExperienceYears > 0;
         _userType = UserTypeX.tryParse(typeValue) ?? _selectedType;
         _selectedType = _userType ?? _selectedType;
       } else {
@@ -315,6 +440,11 @@ class AuthProvider extends ChangeNotifier {
         _profileClinic = '';
         _profileSpecialty = '';
         _profilePhone = '';
+        _profileExperienceYears = 0;
+        _profileQualifications = '';
+        _profileFee = 0;
+        _profileBio = '';
+        _profileCompleted = false;
         _userType = _selectedType;
       }
 

@@ -4,13 +4,16 @@ import '../../../features/auth/auth_provider.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_decorations.dart';
 import '../../../widgets/app_button.dart';
+import '../../../widgets/communication_sheet.dart';
 import '../../../widgets/mobile_header.dart';
 import '../../../widgets/responsive_page_header.dart';
 import '../patients/patients_provider.dart';
 import 'queue_provider.dart';
 
 class QueueScreen extends StatelessWidget {
-  const QueueScreen({super.key});
+  const QueueScreen({super.key, this.showHeader = true});
+
+  final bool showHeader;
 
   bool _isDesktop(BuildContext context) =>
       MediaQuery.of(context).size.width >= 768;
@@ -20,100 +23,343 @@ class QueueScreen extends StatelessWidget {
     if (patients.isEmpty) return;
 
     Patient selectedPatient = patients.first;
-    final reasonController = TextEditingController();
-    final waitController = TextEditingController();
+    final reasonController = TextEditingController(text: 'General Consultation');
+    final waitController = TextEditingController(text: '15');
     QueuePriority priority = QueuePriority.normal;
+
+    const commonReasons = [
+      'General Consultation',
+      'Follow-up Visit',
+      'Prescription Refill',
+      'Fever & Cold',
+      'Emergency Check',
+    ];
+
+    final formKey = GlobalKey<FormState>();
 
     await showDialog<void>(
       context: context,
       builder: (dialogContext) {
         return StatefulBuilder(
           builder: (context, setState) {
-            return AlertDialog(
-              title: const Text('Check-in Patient'),
-              content: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    DropdownButtonFormField<Patient>(
-                      value: selectedPatient,
-                      decoration: const InputDecoration(labelText: 'Patient'),
-                      items: patients
-                          .map(
-                            (patient) => DropdownMenuItem(
-                              value: patient,
-                              child: Text(
-                                '${patient.name} • ${patient.patientId}',
-                              ),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (value) {
-                        if (value == null) return;
-                        setState(() => selectedPatient = value);
-                      },
+            return Dialog(
+              backgroundColor: Colors.transparent,
+              insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 520, maxHeight: 700),
+                decoration: BoxDecoration(
+                  color: AppColors.card,
+                  borderRadius: BorderRadius.circular(28),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 36,
+                      offset: const Offset(0, 12),
                     ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: reasonController,
-                      decoration: const InputDecoration(
-                        labelText: 'Reason for visit',
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Header
+                    Container(
+                      padding: const EdgeInsets.fromLTRB(24, 20, 16, 20),
+                      decoration: BoxDecoration(
+                        gradient: AppColors.gradientHero,
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(
+                              Icons.how_to_reg_rounded,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Check-in Patient to Queue',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'Assign token number & consultation priority',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.white.withOpacity(0.85),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: () => Navigator.of(dialogContext).pop(),
+                            icon: const Icon(Icons.close_rounded, color: Colors.white),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    DropdownButtonFormField<QueuePriority>(
-                      value: priority,
-                      decoration: const InputDecoration(labelText: 'Priority'),
-                      items: const [
-                        DropdownMenuItem(
-                          value: QueuePriority.normal,
-                          child: Text('Normal'),
+
+                    // Content
+                    Flexible(
+                      child: Form(
+                        key: formKey,
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                            // Patient Selector
+                            Text(
+                              'Select Patient',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.mutedForeground,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            DropdownButtonFormField<Patient>(
+                              value: selectedPatient,
+                              decoration: const InputDecoration(
+                                labelText: 'Patient',
+                                prefixIcon: Icon(Icons.person_rounded),
+                              ),
+                              items: patients
+                                  .map(
+                                    (patient) => DropdownMenuItem(
+                                      value: patient,
+                                      child: Text(
+                                        '${patient.name} • ${patient.patientId}',
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  )
+                                  .toList(),
+                              onChanged: (value) {
+                                if (value == null) return;
+                                setState(() => selectedPatient = value);
+                              },
+                            ),
+                            const SizedBox(height: 20),
+
+                            // Priority Selector
+                            Text(
+                              'Queue Priority',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.mutedForeground,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                ChoiceChip(
+                                  label: const Text('Normal Priority'),
+                                  selected: priority == QueuePriority.normal,
+                                  selectedColor: AppColors.primary,
+                                  labelStyle: TextStyle(
+                                    color: priority == QueuePriority.normal
+                                        ? Colors.white
+                                        : AppColors.foreground,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  onSelected: (val) {
+                                    if (val) setState(() => priority = QueuePriority.normal);
+                                  },
+                                ),
+                                const SizedBox(width: 10),
+                                ChoiceChip(
+                                  label: const Text('Urgent Priority'),
+                                  selected: priority == QueuePriority.urgent,
+                                  selectedColor: AppColors.destructive,
+                                  labelStyle: TextStyle(
+                                    color: priority == QueuePriority.urgent
+                                        ? Colors.white
+                                        : AppColors.foreground,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  onSelected: (val) {
+                                    if (val) setState(() => priority = QueuePriority.urgent);
+                                  },
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 20),
+
+                            // Reason for Visit
+                            Text(
+                              'Reason for Visit',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.mutedForeground,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: commonReasons.map((r) {
+                                final isSelected = reasonController.text == r;
+                                return ActionChip(
+                                  label: Text(r),
+                                  backgroundColor: isSelected
+                                      ? AppColors.primaryLight.withOpacity(0.6)
+                                      : AppColors.background,
+                                  side: BorderSide(
+                                    color: isSelected ? AppColors.primary : AppColors.border,
+                                  ),
+                                  labelStyle: TextStyle(
+                                    color: isSelected ? AppColors.primary : AppColors.foreground,
+                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                    fontSize: 12,
+                                  ),
+                                  onPressed: () => setState(() => reasonController.text = r),
+                                );
+                              }).toList(),
+                            ),
+                            const SizedBox(height: 8),
+                            TextFormField(
+                              controller: reasonController,
+                              validator: (val) {
+                                if (val == null || val.trim().isEmpty) {
+                                  return 'Please enter reason for visit';
+                                }
+                                if (val.trim().length < 2) {
+                                  return 'Reason must be at least 2 characters';
+                                }
+                                return null;
+                              },
+                              decoration: const InputDecoration(
+                                labelText: 'Reason Description',
+                                prefixIcon: Icon(Icons.edit_note_rounded),
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+
+                            // Estimated Wait Time
+                            Text(
+                              'Estimated Wait Time (Minutes)',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.mutedForeground,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [5, 10, 15, 25, 30].map((mins) {
+                                final isSelected = waitController.text == mins.toString();
+                                return Padding(
+                                  padding: const EdgeInsets.only(right: 8),
+                                  child: ChoiceChip(
+                                    label: Text('${mins}m'),
+                                    selected: isSelected,
+                                    selectedColor: AppColors.accent,
+                                    labelStyle: TextStyle(
+                                      color: isSelected ? Colors.white : AppColors.foreground,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    onSelected: (val) {
+                                      if (val) setState(() => waitController.text = mins.toString());
+                                    },
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                            const SizedBox(height: 8),
+                            TextFormField(
+                              controller: waitController,
+                              keyboardType: TextInputType.number,
+                              validator: (val) {
+                                if (val == null || val.trim().isEmpty) {
+                                  return 'Please enter estimated wait time';
+                                }
+                                final n = int.tryParse(val.trim());
+                                if (n == null || n < 0 || n > 480) {
+                                  return 'Enter valid minutes (0-480)';
+                                }
+                                return null;
+                              },
+                              decoration: const InputDecoration(
+                                labelText: 'Custom Wait (Minutes)',
+                                prefixIcon: Icon(Icons.timer_rounded),
+                              ),
+                            ),
+                          ],
                         ),
-                        DropdownMenuItem(
-                          value: QueuePriority.urgent,
-                          child: Text('Urgent'),
-                        ),
-                      ],
-                      onChanged: (value) {
-                        if (value == null) return;
-                        setState(() => priority = value);
-                      },
+                      ),
                     ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: waitController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Estimated wait (min)',
+                  ),
+
+                    // Action Footer
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                      decoration: BoxDecoration(
+                        border: Border(top: BorderSide(color: AppColors.border)),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          TextButton(
+                            onPressed: () => Navigator.of(dialogContext).pop(),
+                            child: Text(
+                              'Cancel',
+                              style: TextStyle(
+                                color: AppColors.mutedForeground,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          AppButton(
+                            label: 'Assign Token',
+                            icon: Icons.confirmation_number_rounded,
+                            onPressed: () {
+                              if (!formKey.currentState!.validate()) return;
+                              final reason = reasonController.text.trim();
+                              final wait = int.tryParse(waitController.text.trim());
+                              context.read<QueueProvider>().addToQueue(
+                                doctorId: context.read<AuthProvider>().user?.uid ?? '',
+                                patientName: selectedPatient.name,
+                                patientId: selectedPatient.patientId,
+                                phone: selectedPatient.phone,
+                                reason: reason,
+                                priority: priority,
+                                waitTime: wait,
+                              );
+                              Navigator.of(dialogContext).pop();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('${selectedPatient.name} added to queue!'),
+                                  backgroundColor: AppColors.success,
+                                ),
+                              );
+                            },
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
               ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(),
-                  child: const Text('Cancel'),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    final reason = reasonController.text.trim().isEmpty
-                        ? 'General Consultation'
-                        : reasonController.text.trim();
-                    final wait = int.tryParse(waitController.text.trim());
-                    context.read<QueueProvider>().addToQueue(
-                      doctorId: context.read<AuthProvider>().user?.uid ?? '',
-                      patientName: selectedPatient.name,
-                      patientId: selectedPatient.patientId,
-                      phone: selectedPatient.phone,
-                      reason: reason,
-                      priority: priority,
-                      waitTime: wait,
-                    );
-                    Navigator.of(dialogContext).pop();
-                  },
-                  child: const Text('Add to queue'),
-                ),
-              ],
             );
           },
         );
@@ -137,37 +383,74 @@ class QueueScreen extends StatelessWidget {
     return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (!isDesktop) const MobileHeader(title: 'Queue', showSearch: false),
-          if (isDesktop)
-            ResponsivePageHeader(
-              title: 'Queue Management',
-              subtitle: "Today's patient queue and check-ins",
-              actions: [
-                AppButton(
-                  label: 'Check-in Patient',
-                  icon: Icons.add,
-                  onPressed: () => _showAddToQueueDialog(context),
-                ),
-              ],
+          if (showHeader) ...[
+            if (!isDesktop) const MobileHeader(title: 'Queue', showSearch: false),
+            if (isDesktop)
+              ResponsivePageHeader(
+                title: 'Queue Management',
+                subtitle: "Today's patient queue and check-ins",
+                actions: [
+                  AppButton(
+                    label: 'Check-in Patient',
+                    icon: Icons.add,
+                    onPressed: () => _showAddToQueueDialog(context),
+                  ),
+                ],
+              ),
+            if (!isDesktop) ...[
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    "Today's Queue",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                  ),
+                  AppButton(
+                    label: 'Check-in',
+                    icon: Icons.add,
+                    size: AppButtonSize.small,
+                    onPressed: () => _showAddToQueueDialog(context),
+                  ),
+                ],
+              ),
+            ],
+          ] else
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          "Live Patient Queue",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        Text(
+                          '$waitingCount waiting • $inConsultationCount in consultation',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.mutedForeground,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  AppButton(
+                    label: 'Check-in Patient',
+                    icon: Icons.how_to_reg_rounded,
+                    size: AppButtonSize.small,
+                    onPressed: () => _showAddToQueueDialog(context),
+                  ),
+                ],
+              ),
             ),
-          if (!isDesktop) ...[
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  "Today's Queue",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                ),
-                AppButton(
-                  label: 'Check-in',
-                  icon: Icons.add,
-                  size: AppButtonSize.small,
-                  onPressed: () => _showAddToQueueDialog(context),
-                ),
-              ],
-            ),
-          ],
           const SizedBox(height: 16),
           LayoutBuilder(
             builder: (context, constraints) {
@@ -384,6 +667,37 @@ class QueueScreen extends StatelessWidget {
                                           .completeConsultation(patient.id),
                                     ),
                                   ),
+                                const SizedBox(width: 8),
+                                InkWell(
+                                  borderRadius: BorderRadius.circular(10),
+                                  onTap: () {
+                                    CommunicationSheet.show(
+                                      context,
+                                      recipientName: patient.patientName,
+                                      recipientRole: 'Patient',
+                                      phone: patient.phone,
+                                      isScheduled: true,
+                                      scheduledTime:
+                                          'Token #${patient.tokenNumber} • Check-in: ${patient.checkInTime}',
+                                      statusText: patient.reason,
+                                    );
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF25D366).withOpacity(0.12),
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(
+                                        color: const Color(0xFF25D366).withOpacity(0.35),
+                                      ),
+                                    ),
+                                    child: const Icon(
+                                      Icons.phone_in_talk_rounded,
+                                      size: 18,
+                                      color: Color(0xFF25D366),
+                                    ),
+                                  ),
+                                ),
                                 const SizedBox(width: 8),
                                 AppButton(
                                   label: '',
@@ -645,6 +959,54 @@ class QueueScreen extends StatelessWidget {
                                         .read<QueueProvider>()
                                         .completeConsultation(patient.id),
                                   ),
+                                const SizedBox(width: 8),
+                                InkWell(
+                                  borderRadius: BorderRadius.circular(10),
+                                  onTap: () {
+                                    CommunicationSheet.show(
+                                      context,
+                                      recipientName: patient.patientName,
+                                      recipientRole: 'Patient',
+                                      phone: patient.phone,
+                                      isScheduled: true,
+                                      scheduledTime:
+                                          'Token #${patient.tokenNumber} • Check-in: ${patient.checkInTime}',
+                                      statusText: patient.reason,
+                                    );
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF25D366).withOpacity(0.12),
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(
+                                        color: const Color(0xFF25D366).withOpacity(0.35),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: const [
+                                        Icon(
+                                          Icons.phone_in_talk_rounded,
+                                          size: 14,
+                                          color: Color(0xFF25D366),
+                                        ),
+                                        SizedBox(width: 4),
+                                        Text(
+                                          'Call / Chat',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                            color: Color(0xFF25D366),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
                                 const SizedBox(width: 8),
                                 AppButton(
                                   label: '',

@@ -263,6 +263,7 @@ class DoctorDocumentsScreen extends StatelessWidget {
     final provider = context.read<DoctorDocumentsProvider>();
     final patients = provider.patients;
 
+    final formKey = GlobalKey<FormState>();
     final imagePicker = ImagePicker();
     String? selectedPatientId;
     String? selectedPatientName;
@@ -287,116 +288,136 @@ class DoctorDocumentsScreen extends StatelessWidget {
               content: SizedBox(
                 width: 420,
                 child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Patient selection
-                      Text(
-                        'Select Patient',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.foreground,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      DropdownButtonFormField<String>(
-                        value: selectedPatientId,
-                        decoration: InputDecoration(
-                          hintText: 'Choose a patient',
-                          filled: true,
-                          fillColor: AppColors.muted,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
+                  child: Form(
+                    key: formKey,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Patient selection
+                        Text(
+                          'Select Patient',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.foreground,
                           ),
                         ),
-                        items: patients.map((p) {
-                          return DropdownMenuItem(
-                            value: p.id,
-                            child: Text(p.name),
-                          );
-                        }).toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            selectedPatientId = value;
-                            selectedPatientName = patients
-                                .firstWhere((p) => p.id == value)
-                                .name;
-                          });
-                        },
-                      ),
-                      const SizedBox(height: 16),
+                        const SizedBox(height: 8),
+                        DropdownButtonFormField<String>(
+                          value: selectedPatientId,
+                          validator: (v) {
+                            if (v == null || v.trim().isEmpty) {
+                              return 'Please select a patient';
+                            }
+                            return null;
+                          },
+                          decoration: InputDecoration(
+                            hintText: 'Choose a patient',
+                            filled: true,
+                            fillColor: AppColors.muted,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                          items: patients.map((p) {
+                            return DropdownMenuItem(
+                              value: p.id,
+                              child: Text(p.name),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              selectedPatientId = value;
+                              selectedPatientName = patients
+                                  .firstWhere((p) => p.id == value)
+                                  .name;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 16),
 
-                      // Category
-                      Text(
-                        'Category',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.foreground,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      DropdownButtonFormField<String>(
-                        value: category,
-                        decoration: InputDecoration(
-                          filled: true,
-                          fillColor: AppColors.muted,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
+                        // Category
+                        Text(
+                          'Category',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.foreground,
                           ),
                         ),
-                        items: const [
-                          DropdownMenuItem(
-                            value: 'Lab Report',
-                            child: Text('Lab Report'),
+                        const SizedBox(height: 8),
+                        DropdownButtonFormField<String>(
+                          value: category,
+                          validator: (v) {
+                            if (v == null || v.trim().isEmpty) {
+                              return 'Please select a category';
+                            }
+                            return null;
+                          },
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: AppColors.muted,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
                           ),
-                          DropdownMenuItem(
-                            value: 'Prescription',
-                            child: Text('Prescription'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'Scan / Imaging',
-                            child: Text('Scan / Imaging'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'Discharge Summary',
-                            child: Text('Discharge Summary'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'General',
-                            child: Text('General'),
-                          ),
-                        ],
-                        onChanged: (value) {
-                          setState(() => category = value ?? 'General');
-                        },
-                      ),
-                      const SizedBox(height: 16),
+                          items: const [
+                            DropdownMenuItem(
+                              value: 'Lab Report',
+                              child: Text('Lab Report'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'Prescription',
+                              child: Text('Prescription'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'Scan / Imaging',
+                              child: Text('Scan / Imaging'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'Discharge Summary',
+                              child: Text('Discharge Summary'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'General',
+                              child: Text('General'),
+                            ),
+                          ],
+                          onChanged: (value) {
+                            setState(() => category = value ?? 'General');
+                          },
+                        ),
+                        const SizedBox(height: 16),
 
-                      // Notes
-                      Text(
-                        'Notes (optional)',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.foreground,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      TextField(
-                        maxLines: 2,
-                        onChanged: (v) => notes = v,
-                        decoration: InputDecoration(
-                          hintText: 'Add any notes about this document...',
-                          filled: true,
-                          fillColor: AppColors.muted,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
+                        // Notes
+                        Text(
+                          'Notes (optional)',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.foreground,
                           ),
                         ),
-                      ),
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          maxLines: 2,
+                          onChanged: (v) => notes = v,
+                          validator: (v) {
+                            if (v != null && v.trim().isNotEmpty && v.trim().length > 300) {
+                              return 'Notes cannot exceed 300 characters';
+                            }
+                            return null;
+                          },
+                          decoration: InputDecoration(
+                            hintText: 'Add any notes about this document...',
+                            filled: true,
+                            fillColor: AppColors.muted,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                        ),
                       const SizedBox(height: 16),
 
                       // File / scan picker
@@ -530,7 +551,8 @@ class DoctorDocumentsScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              actions: [
+            ),
+            actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(ctx),
                   child: Text(
@@ -539,21 +561,30 @@ class DoctorDocumentsScreen extends StatelessWidget {
                   ),
                 ),
                 ElevatedButton(
-                  onPressed: (selectedPatientId == null || pickedBytes == null)
-                      ? null
-                      : () async {
-                          Navigator.pop(ctx);
-                          await provider.uploadBytes(
-                            patientId: selectedPatientId!,
-                            patientName: selectedPatientName ?? '',
-                            doctorId: auth.user?.uid ?? '',
-                            doctorName: auth.profileName,
-                            fileName: pickedName ?? 'document',
-                            fileBytes: pickedBytes!,
-                            category: category,
-                            notes: notes,
-                          );
-                        },
+                  onPressed: () async {
+                    if (formKey.currentState == null || !formKey.currentState!.validate()) {
+                      return;
+                    }
+                    if (pickedBytes == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Please select or scan a file to upload'),
+                        ),
+                      );
+                      return;
+                    }
+                    Navigator.pop(ctx);
+                    await provider.uploadBytes(
+                      patientId: selectedPatientId!,
+                      patientName: selectedPatientName ?? '',
+                      doctorId: auth.user?.uid ?? '',
+                      doctorName: auth.profileName,
+                      fileName: pickedName ?? 'document',
+                      fileBytes: pickedBytes!,
+                      category: category,
+                      notes: notes,
+                    );
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
