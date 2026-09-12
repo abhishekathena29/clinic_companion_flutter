@@ -6,6 +6,7 @@ import '../../../shared/appointments_repository.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_decorations.dart';
 import '../../../widgets/app_button.dart';
+import '../../../widgets/consultation_mode_toggle.dart';
 import '../appointments/patient_appointments_provider.dart';
 import 'patient_doctors_provider.dart';
 
@@ -24,6 +25,7 @@ class PatientDoctorsScreen extends StatelessWidget {
     DateTime selectedDate = DateTime.now().add(const Duration(days: 1));
     final timeController = TextEditingController(text: '10:30 AM');
     final reasonController = TextEditingController(text: 'Consultation');
+    String consultationMode = kConsultationInPerson;
 
     await showDialog<void>(
       context: context,
@@ -38,6 +40,12 @@ class PatientDoctorsScreen extends StatelessWidget {
               content: SingleChildScrollView(
                 child: Column(
                   children: [
+                    ConsultationModeToggle(
+                      mode: consultationMode,
+                      onChanged: (value) =>
+                          setState(() => consultationMode = value),
+                    ),
+                    const SizedBox(height: 16),
                     TextField(
                       controller: reasonController,
                       decoration: const InputDecoration(
@@ -113,6 +121,7 @@ class PatientDoctorsScreen extends StatelessWidget {
                       date: selectedDate,
                       time: timeController.text.trim(),
                       reason: reasonController.text.trim(),
+                      consultationMode: consultationMode,
                     );
                     Navigator.of(dialogContext).pop();
                   },
@@ -150,24 +159,33 @@ class PatientDoctorsScreen extends StatelessWidget {
           style: TextStyle(color: AppColors.mutedForeground, fontSize: 15),
         ),
         const SizedBox(height: 24),
-        GridView.count(
-          crossAxisCount: isDesktop ? 2 : 1,
-          shrinkWrap: true,
-          mainAxisSpacing: 16,
-          crossAxisSpacing: 16,
-          physics: const NeverScrollableScrollPhysics(),
-          childAspectRatio: isDesktop ? 2.7 : 1.8,
-          children: doctors.map((doctor) {
-            return _DoctorCard(
-              doctor: doctor,
-              onBook: () => _showBookingDialog(
-                context,
-                doctor,
-                patientId: patientId,
-                patientName: patientName,
-              ),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            const spacing = 16.0;
+            final columns = isDesktop ? 2 : 1;
+            final itemWidth = columns == 1
+                ? constraints.maxWidth
+                : (constraints.maxWidth - spacing) / 2;
+
+            return Wrap(
+              spacing: spacing,
+              runSpacing: spacing,
+              children: doctors.map((doctor) {
+                return SizedBox(
+                  width: itemWidth,
+                  child: _DoctorCard(
+                    doctor: doctor,
+                    onBook: () => _showBookingDialog(
+                      context,
+                      doctor,
+                      patientId: patientId,
+                      patientName: patientName,
+                    ),
+                  ),
+                );
+              }).toList(),
             );
-          }).toList(),
+          },
         ),
       ],
     );
@@ -226,37 +244,48 @@ class _DoctorCard extends StatelessWidget {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    Icon(
-                      Icons.star_rounded,
-                      size: 16,
-                      color: AppColors.warning,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      doctor.rating.toStringAsFixed(1),
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 12,
+                    if (doctor.rating > 0) ...[
+                      Icon(
+                        Icons.star_rounded,
+                        size: 16,
+                        color: AppColors.warning,
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      doctor.clinic,
-                      style: TextStyle(
-                        color: AppColors.mutedForeground,
-                        fontSize: 12,
+                      const SizedBox(width: 4),
+                      Text(
+                        doctor.rating.toStringAsFixed(1),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                    ],
+                    Flexible(
+                      child: Text(
+                        doctor.clinic,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: AppColors.mutedForeground,
+                          fontSize: 12,
+                        ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  '${doctor.location} • ₹${doctor.fee}',
-                  style: TextStyle(
-                    color: AppColors.mutedForeground,
-                    fontSize: 12,
+                if (doctor.location.isNotEmpty || doctor.fee > 0) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    [
+                      if (doctor.location.isNotEmpty) doctor.location,
+                      if (doctor.fee > 0) '₹${doctor.fee}',
+                    ].join(' • '),
+                    style: TextStyle(
+                      color: AppColors.mutedForeground,
+                      fontSize: 12,
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
           ),
@@ -264,15 +293,17 @@ class _DoctorCard extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
-                doctor.nextAvailable,
-                style: TextStyle(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
+              if (doctor.nextAvailable.isNotEmpty) ...[
+                Text(
+                  doctor.nextAvailable,
+                  style: TextStyle(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 12),
+                const SizedBox(height: 12),
+              ],
               AppButton(
                 label: 'Book',
                 size: AppButtonSize.small,

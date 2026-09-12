@@ -89,7 +89,7 @@ class ClinicCompanionApp extends StatelessWidget {
         ),
       ],
       child: MaterialApp(
-        title: 'Clinic Companion',
+        title: 'Medi-Connect',
         theme: AppTheme.light(),
         debugShowCheckedModeBanner: false,
         // home: const _AuthGate(),

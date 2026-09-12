@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
+import '../../widgets/app_bottom_nav.dart';
 import '../../widgets/sidebar.dart';
 import 'dashboard/dashboard_screen.dart';
 import 'documents/doctor_documents_screen.dart';
@@ -50,34 +51,28 @@ class _DoctorShellState extends State<DoctorShell> {
       backgroundColor: AppColors.background,
       bottomNavigationBar: isDesktop
           ? null
-          : BottomNavigationBar(
+          : AppBottomNav(
               currentIndex: _bottomNavIndex,
               onTap: (i) => setState(() => _currentIndex = _bottomNavToPage[i]),
-              type: BottomNavigationBarType.fixed,
-              selectedItemColor: AppColors.primary,
-              unselectedItemColor: AppColors.mutedForeground,
-              backgroundColor: AppColors.card,
-              selectedFontSize: 12,
-              unselectedFontSize: 12,
               items: const [
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.dashboard_rounded),
+                AppBottomNavItem(
+                  icon: Icons.dashboard_rounded,
                   label: 'Home',
                 ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.people_alt_rounded),
+                AppBottomNavItem(
+                  icon: Icons.people_alt_rounded,
                   label: 'Patients',
                 ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.list_alt_rounded),
+                AppBottomNavItem(
+                  icon: Icons.list_alt_rounded,
                   label: 'Queue',
                 ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.folder_shared_rounded),
+                AppBottomNavItem(
+                  icon: Icons.folder_shared_rounded,
                   label: 'Documents',
                 ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.settings_rounded),
+                AppBottomNavItem(
+                  icon: Icons.settings_rounded,
                   label: 'Settings',
                 ),
               ],

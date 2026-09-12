@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
+import '../../widgets/app_bottom_nav.dart';
 import '../../widgets/patient_sidebar.dart';
 import 'appointments/patient_appointments_screen.dart';
 import 'dashboard/patient_dashboard_screen.dart';
@@ -57,34 +58,25 @@ class _PatientShellState extends State<PatientShell> {
       backgroundColor: AppColors.background,
       bottomNavigationBar: isDesktop
           ? null
-          : BottomNavigationBar(
+          : AppBottomNav(
               currentIndex: _currentIndex,
               onTap: _setIndex,
-              type: BottomNavigationBarType.fixed,
-              selectedItemColor: AppColors.primary,
-              unselectedItemColor: AppColors.mutedForeground,
-              backgroundColor: AppColors.card,
-              selectedFontSize: 12,
-              unselectedFontSize: 12,
               items: const [
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.home_rounded),
-                  label: 'Home',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.medical_services_rounded),
+                AppBottomNavItem(icon: Icons.home_rounded, label: 'Home'),
+                AppBottomNavItem(
+                  icon: Icons.medical_services_rounded,
                   label: 'Doctors',
                 ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.event_available_rounded),
+                AppBottomNavItem(
+                  icon: Icons.event_available_rounded,
                   label: 'Appointments',
                 ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.folder_shared_rounded),
+                AppBottomNavItem(
+                  icon: Icons.folder_shared_rounded,
                   label: 'Documents',
                 ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.settings_rounded),
+                AppBottomNavItem(
+                  icon: Icons.settings_rounded,
                   label: 'Settings',
                 ),
               ],

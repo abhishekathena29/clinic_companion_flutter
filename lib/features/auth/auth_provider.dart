@@ -41,6 +41,7 @@ class AuthProvider extends ChangeNotifier {
   String _profileName = '';
   String _profileClinic = '';
   String _profileSpecialty = '';
+  String _profilePhone = '';
 
   User? _user;
 
@@ -57,6 +58,7 @@ class AuthProvider extends ChangeNotifier {
       _profileName.isEmpty ? (_user?.displayName ?? '') : _profileName;
   String get profileClinic => _profileClinic;
   String get profileSpecialty => _profileSpecialty;
+  String get profilePhone => _profilePhone;
   bool get isAuthenticated => _user != null;
 
   String get name => _name;
@@ -184,14 +186,6 @@ class AuthProvider extends ChangeNotifier {
         'specialty': _selectedType == UserType.doctor
             ? 'General Medicine'
             : null,
-        'clinic': _selectedType == UserType.doctor ? 'Clinic Companion' : null,
-        'location': 'Bengaluru',
-        'fee': _selectedType == UserType.doctor ? 500 : null,
-        'experienceYears': _selectedType == UserType.doctor ? 5 : null,
-        'rating': _selectedType == UserType.doctor ? 4.8 : null,
-        'nextAvailable': _selectedType == UserType.doctor
-            ? 'Today, 5:00 PM'
-            : null,
         'createdAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
       if (_selectedType == UserType.patient && userId != null) {
@@ -226,6 +220,7 @@ class AuthProvider extends ChangeNotifier {
     _profileName = '';
     _profileClinic = '';
     _profileSpecialty = '';
+    _profilePhone = '';
     notifyListeners();
   }
 
@@ -233,6 +228,7 @@ class AuthProvider extends ChangeNotifier {
     required String name,
     required String clinic,
     String? specialty,
+    String? phone,
   }) async {
     final user = _auth.currentUser;
     if (user == null) return;
@@ -240,6 +236,7 @@ class AuthProvider extends ChangeNotifier {
     final trimmedName = name.trim();
     final trimmedClinic = clinic.trim();
     final trimmedSpecialty = specialty?.trim();
+    final trimmedPhone = phone?.trim();
 
     _setLoading(true);
     _error = null;
@@ -255,6 +252,7 @@ class AuthProvider extends ChangeNotifier {
         'clinic': trimmedClinic,
         if (trimmedSpecialty != null && trimmedSpecialty.isNotEmpty)
           'specialty': trimmedSpecialty,
+        if (trimmedPhone != null) 'phone': trimmedPhone,
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
 
@@ -264,6 +262,9 @@ class AuthProvider extends ChangeNotifier {
       _profileClinic = trimmedClinic;
       if (trimmedSpecialty != null && trimmedSpecialty.isNotEmpty) {
         _profileSpecialty = trimmedSpecialty;
+      }
+      if (trimmedPhone != null) {
+        _profilePhone = trimmedPhone;
       }
       notifyListeners();
     } on FirebaseException catch (e) {
@@ -306,12 +307,14 @@ class AuthProvider extends ChangeNotifier {
         _profileName = name;
         _profileClinic = data?['clinic']?.toString() ?? '';
         _profileSpecialty = data?['specialty']?.toString() ?? '';
+        _profilePhone = data?['phone']?.toString() ?? '';
         _userType = UserTypeX.tryParse(typeValue) ?? _selectedType;
         _selectedType = _userType ?? _selectedType;
       } else {
         _profileName = user.displayName ?? '';
         _profileClinic = '';
         _profileSpecialty = '';
+        _profilePhone = '';
         _userType = _selectedType;
       }
 

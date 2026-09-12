@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Clinic Companion</string>
+	<string>Medi-Connect</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -45,5 +45,9 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Medi-Connect needs camera access so you can scan documents like prescriptions and lab reports.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Medi-Connect needs photo library access so you can upload existing photos of your documents.</string>
 </dict>
 </plist>

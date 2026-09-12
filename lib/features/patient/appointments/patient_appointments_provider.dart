@@ -27,6 +27,7 @@ class PatientAppointmentsProvider extends ChangeNotifier {
     required DateTime date,
     required String time,
     required String reason,
+    String consultationMode = kConsultationInPerson,
   }) {
     return _repository.addAppointment(
       patientId: patientId,
@@ -40,6 +41,7 @@ class PatientAppointmentsProvider extends ChangeNotifier {
       type: reason,
       duration: '20 min',
       status: 'Pending',
+      consultationMode: consultationMode,
     );
   }
 

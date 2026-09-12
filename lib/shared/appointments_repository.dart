@@ -2,9 +2,10 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+
+import 'cloudinary_service.dart';
 
 DateTime? _parseFirestoreDate(dynamic value) {
   if (value == null) return null;
@@ -31,6 +32,9 @@ DateTime? _parseFirestoreDate(dynamic value) {
   return null;
 }
 
+const String kConsultationInPerson = 'inPerson';
+const String kConsultationVideo = 'video';
+
 class Appointment {
   const Appointment({
     required this.id,
@@ -45,6 +49,8 @@ class Appointment {
     required this.date,
     required this.specialty,
     required this.clinic,
+    this.consultationMode = kConsultationInPerson,
+    this.meetingLink = '',
   });
 
   factory Appointment.fromFirestore(
@@ -65,7 +71,10 @@ class Appointment {
       status: data['status']?.toString() ?? 'Pending',
       date: date,
       specialty: data['specialty']?.toString() ?? 'General Medicine',
-      clinic: data['clinic']?.toString() ?? 'Clinic Companion',
+      clinic: data['clinic']?.toString() ?? 'Medi-Connect',
+      consultationMode:
+          data['consultationMode']?.toString() ?? kConsultationInPerson,
+      meetingLink: data['meetingLink']?.toString() ?? '',
     );
   }
 
@@ -81,6 +90,10 @@ class Appointment {
   final DateTime date;
   final String specialty;
   final String clinic;
+  final String consultationMode;
+  final String meetingLink;
+
+  bool get isVideoConsultation => consultationMode == kConsultationVideo;
 
   Map<String, dynamic> toMap() {
     return {
@@ -95,6 +108,8 @@ class Appointment {
       'date': Timestamp.fromDate(date),
       'specialty': specialty,
       'clinic': clinic,
+      'consultationMode': consultationMode,
+      'meetingLink': meetingLink,
       'updatedAt': FieldValue.serverTimestamp(),
     };
   }
@@ -112,6 +127,7 @@ class DoctorProfile {
     required this.fee,
     required this.nextAvailable,
     required this.email,
+    this.phone = '',
   });
 
   factory DoctorProfile.fromFirestore(
@@ -122,13 +138,14 @@ class DoctorProfile {
       id: doc.id,
       name: data['name']?.toString() ?? 'Doctor',
       specialty: data['specialty']?.toString() ?? 'General Medicine',
-      rating: (data['rating'] as num?)?.toDouble() ?? 4.8,
-      experienceYears: (data['experienceYears'] as num?)?.toInt() ?? 5,
-      clinic: data['clinic']?.toString() ?? 'Clinic Companion',
-      location: data['location']?.toString() ?? 'Bengaluru',
-      fee: (data['fee'] as num?)?.toInt() ?? 500,
-      nextAvailable: data['nextAvailable']?.toString() ?? 'Next available',
+      rating: (data['rating'] as num?)?.toDouble() ?? 0,
+      experienceYears: (data['experienceYears'] as num?)?.toInt() ?? 0,
+      clinic: data['clinic']?.toString() ?? 'Medi-Connect',
+      location: data['location']?.toString() ?? '',
+      fee: (data['fee'] as num?)?.toInt() ?? 0,
+      nextAvailable: data['nextAvailable']?.toString() ?? '',
       email: data['email']?.toString() ?? '',
+      phone: data['phone']?.toString() ?? '',
     );
   }
 
@@ -142,6 +159,7 @@ class DoctorProfile {
   final int fee;
   final String nextAvailable;
   final String email;
+  final String phone;
 }
 
 class Patient {
@@ -412,8 +430,6 @@ class AppointmentsRepository extends ChangeNotifier {
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  final FirebaseStorage _storage = FirebaseStorage.instance;
-
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _doctorSubscription;
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _patientSubscription;
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>?
@@ -444,6 +460,16 @@ class AppointmentsRepository extends ChangeNotifier {
     if (userId == null || userId.isEmpty) return null;
     for (final patient in _patients) {
       if (patient.userId == userId) return patient;
+    }
+    return null;
+  }
+
+  Patient? patientById(String? patientId) {
+    if (patientId == null || patientId.isEmpty) return null;
+    for (final patient in _patients) {
+      if (patient.id == patientId || patient.userId == patientId) {
+        return patient;
+      }
     }
     return null;
   }
@@ -561,6 +587,8 @@ class AppointmentsRepository extends ChangeNotifier {
     required String type,
     required String duration,
     String status = 'Pending',
+    String consultationMode = kConsultationInPerson,
+    String meetingLink = '',
   }) async {
     await _firestore.collection('appointments').add({
       'patientId': patientId,
@@ -574,6 +602,8 @@ class AppointmentsRepository extends ChangeNotifier {
       'type': type,
       'duration': duration,
       'status': status,
+      'consultationMode': consultationMode,
+      'meetingLink': meetingLink,
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     });
@@ -588,6 +618,16 @@ class AppointmentsRepository extends ChangeNotifier {
         'totalVisits': linkedPatient.totalVisits + 1,
       }, SetOptions(merge: true));
     }
+  }
+
+  Future<void> updateAppointmentMeetingLink(
+    String appointmentId,
+    String meetingLink,
+  ) async {
+    await _firestore.collection('appointments').doc(appointmentId).set({
+      'meetingLink': meetingLink,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
   }
 
   Future<void> addToQueue({
@@ -642,14 +682,10 @@ class AppointmentsRepository extends ChangeNotifier {
     String notes = '',
   }) async {
     final ext = fileName.contains('.') ? fileName.split('.').last : 'pdf';
-    final storagePath =
-        'health_documents/$patientId/${DateTime.now().millisecondsSinceEpoch}_$fileName';
-    final ref = _storage.ref(storagePath);
-    final metadata = SettableMetadata(
-      contentType: _mimeType(ext),
+    final downloadUrl = await CloudinaryService.uploadBytes(
+      fileBytes,
+      fileName,
     );
-    await ref.putData(fileBytes, metadata);
-    final downloadUrl = await ref.getDownloadURL();
 
     await _firestore.collection('health_documents').add({
       'patientId': patientId,
@@ -666,31 +702,11 @@ class AppointmentsRepository extends ChangeNotifier {
     });
   }
 
+  // Cloudinary's unsigned upload preset has no matching unsigned delete API,
+  // so removing a document only clears the Firestore record; the file
+  // itself remains on Cloudinary.
   Future<void> deleteDocument(String documentId, String fileUrl) async {
-    try {
-      await _storage.refFromURL(fileUrl).delete();
-    } catch (_) {
-      // File may already be deleted from storage
-    }
     await _firestore.collection('health_documents').doc(documentId).delete();
-  }
-
-  static String _mimeType(String ext) {
-    switch (ext.toLowerCase()) {
-      case 'pdf':
-        return 'application/pdf';
-      case 'png':
-        return 'image/png';
-      case 'jpg':
-      case 'jpeg':
-        return 'image/jpeg';
-      case 'doc':
-        return 'application/msword';
-      case 'docx':
-        return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-      default:
-        return 'application/octet-stream';
-    }
   }
 
   @override

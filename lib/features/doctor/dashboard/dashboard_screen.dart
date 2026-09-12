@@ -56,27 +56,27 @@ class DashboardScreen extends StatelessWidget {
               final crossAxisCount = isDesktop
                   ? (constraints.maxWidth >= 1180 ? 4 : 2)
                   : 2;
-              final ratio = isDesktop
-                  ? (constraints.maxWidth >= 1180 ? 2.4 : 2.2)
-                  : 1.6;
+              final spacing = isDesktop ? 16.0 : 10.0;
+              final itemWidth =
+                  (constraints.maxWidth - spacing * (crossAxisCount - 1)) /
+                  crossAxisCount;
 
-              return GridView.count(
-                crossAxisCount: crossAxisCount,
-                mainAxisSpacing: isDesktop ? 16 : 10,
-                crossAxisSpacing: isDesktop ? 16 : 10,
-                childAspectRatio: ratio,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
+              return Wrap(
+                spacing: spacing,
+                runSpacing: spacing,
                 children: provider
                     .statsForDoctor(doctorId)
                     .map(
-                      (stat) => StatCard(
-                        title: stat.title,
-                        value: stat.value,
-                        change: stat.change,
-                        changeType: stat.changeType,
-                        icon: stat.icon,
-                        variant: stat.variant,
+                      (stat) => SizedBox(
+                        width: itemWidth,
+                        child: StatCard(
+                          title: stat.title,
+                          value: stat.value,
+                          change: stat.change,
+                          changeType: stat.changeType,
+                          icon: stat.icon,
+                          variant: stat.variant,
+                        ),
                       ),
                     )
                     .toList(),

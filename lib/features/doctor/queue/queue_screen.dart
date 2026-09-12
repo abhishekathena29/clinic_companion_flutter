@@ -5,6 +5,7 @@ import '../../../theme/app_colors.dart';
 import '../../../theme/app_decorations.dart';
 import '../../../widgets/app_button.dart';
 import '../../../widgets/mobile_header.dart';
+import '../../../widgets/responsive_page_header.dart';
 import '../patients/patients_provider.dart';
 import 'queue_provider.dart';
 
@@ -138,26 +139,10 @@ class QueueScreen extends StatelessWidget {
         children: [
           if (!isDesktop) const MobileHeader(title: 'Queue', showSearch: false),
           if (isDesktop)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Queue Management',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      "Today's patient queue and check-ins",
-                      style: TextStyle(color: AppColors.mutedForeground),
-                    ),
-                  ],
-                ),
+            ResponsivePageHeader(
+              title: 'Queue Management',
+              subtitle: "Today's patient queue and check-ins",
+              actions: [
                 AppButton(
                   label: 'Check-in Patient',
                   icon: Icons.add,
@@ -184,39 +169,59 @@ class QueueScreen extends StatelessWidget {
             ),
           ],
           const SizedBox(height: 16),
-          GridView.count(
-            crossAxisCount: isDesktop ? 4 : 2,
-            mainAxisSpacing: isDesktop ? 16 : 12,
-            crossAxisSpacing: isDesktop ? 16 : 12,
-            childAspectRatio: isDesktop ? 2.4 : 1.6,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            children: [
-              _statTile(
-                Icons.access_time,
-                waitingCount.toString(),
-                'Waiting',
-                AppColors.warning,
-              ),
-              _statTile(
-                Icons.person,
-                inConsultationCount.toString(),
-                'Consulting',
-                AppColors.info,
-              ),
-              _statTile(
-                Icons.check_circle,
-                completedCount.toString(),
-                'Done',
-                AppColors.success,
-              ),
-              _statTile(
-                Icons.access_time,
-                '${avgWait}m',
-                'Avg. Wait',
-                AppColors.primary,
-              ),
-            ],
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final crossAxisCount = isDesktop
+                  ? (constraints.maxWidth >= 620 ? 4 : 2)
+                  : 2;
+              final spacing = isDesktop ? 16.0 : 12.0;
+              final itemWidth =
+                  (constraints.maxWidth - spacing * (crossAxisCount - 1)) /
+                  crossAxisCount;
+
+              return Wrap(
+                spacing: spacing,
+                runSpacing: spacing,
+                children: [
+                  SizedBox(
+                    width: itemWidth,
+                    child: _statTile(
+                      Icons.access_time,
+                      waitingCount.toString(),
+                      'Waiting',
+                      AppColors.warning,
+                    ),
+                  ),
+                  SizedBox(
+                    width: itemWidth,
+                    child: _statTile(
+                      Icons.person,
+                      inConsultationCount.toString(),
+                      'Consulting',
+                      AppColors.info,
+                    ),
+                  ),
+                  SizedBox(
+                    width: itemWidth,
+                    child: _statTile(
+                      Icons.check_circle,
+                      completedCount.toString(),
+                      'Done',
+                      AppColors.success,
+                    ),
+                  ),
+                  SizedBox(
+                    width: itemWidth,
+                    child: _statTile(
+                      Icons.access_time,
+                      '${avgWait}m',
+                      'Avg. Wait',
+                      AppColors.primary,
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
           const SizedBox(height: 16),
           if (!isDesktop)
@@ -264,10 +269,14 @@ class QueueScreen extends StatelessWidget {
                           children: [
                             Row(
                               children: [
-                                Text(
+                                Flexible(
+                                  child: Text(
                                   patient.patientName,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
                                     fontWeight: FontWeight.w600,
+                                  ),
                                   ),
                                 ),
                                 if (isUrgent) ...[
@@ -465,11 +474,15 @@ class QueueScreen extends StatelessWidget {
                                 children: [
                                   Row(
                                     children: [
-                                      Text(
+                                      Flexible(
+                                        child: Text(
                                         patient.patientName,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
                                         style: const TextStyle(
                                           fontSize: 18,
                                           fontWeight: FontWeight.w600,
+                                        ),
                                         ),
                                       ),
                                       if (isUrgent) ...[
@@ -531,7 +544,10 @@ class QueueScreen extends StatelessWidget {
                                     ],
                                   ),
                                   const SizedBox(height: 6),
-                                  Row(
+                                  Wrap(
+                                    spacing: 8,
+                                    runSpacing: 4,
+                                    crossAxisAlignment: WrapCrossAlignment.center,
                                     children: [
                                       Container(
                                         padding: const EdgeInsets.symmetric(
@@ -552,8 +568,8 @@ class QueueScreen extends StatelessWidget {
                                           ),
                                         ),
                                       ),
-                                      const SizedBox(width: 8),
                                       Row(
+                                        mainAxisSize: MainAxisSize.min,
                                         children: [
                                           Icon(
                                             Icons.phone,
@@ -570,7 +586,6 @@ class QueueScreen extends StatelessWidget {
                                           ),
                                         ],
                                       ),
-                                      const SizedBox(width: 12),
                                       Text(
                                         patient.reason,
                                         style: TextStyle(
@@ -683,24 +698,31 @@ class QueueScreen extends StatelessWidget {
             child: Icon(icon, color: color, size: 20),
           ),
           const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppColors.mutedForeground,
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.mutedForeground,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),

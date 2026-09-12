@@ -138,6 +138,29 @@ class _OnboardingCard extends StatelessWidget {
       children: [
         Row(
           children: [
+            if (provider.currentStep > 0)
+              Padding(
+                padding: const EdgeInsets.only(right: 10),
+                child: InkWell(
+                  onTap: () => controller.previousPage(
+                    duration: const Duration(milliseconds: 320),
+                    curve: Curves.easeOutCubic,
+                  ),
+                  borderRadius: BorderRadius.circular(999),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.muted,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.arrow_back_rounded,
+                      size: isCompact ? 18 : 20,
+                      color: AppColors.foreground,
+                    ),
+                  ),
+                ),
+              ),
             _LogoChip(isLight: true, isCompact: isCompact),
             const Spacer(),
             Text(
@@ -216,7 +239,7 @@ class _DesktopIntro extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(isShort ? 32 : 40),
       decoration: AppDecorations.glass(
-        color: Colors.blue.withValues(alpha: 0.08),
+        color: Colors.teal.withValues(alpha: 0.08),
         radius: BorderRadius.circular(32),
       ),
       child: Column(
@@ -228,7 +251,7 @@ class _DesktopIntro extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Clear, fast\nclinic onboarding',
+                'Your health,\nscheduled in a click',
                 style: TextStyle(
                   fontSize: isShort ? 48 : 58,
                   fontWeight: FontWeight.w900,
@@ -239,7 +262,7 @@ class _DesktopIntro extends StatelessWidget {
               ),
               const SizedBox(height: 18),
               Text(
-                'Set up patient intake, scheduling, and follow-ups in a simple guided flow that works cleanly across devices.',
+                'Find a doctor, book a slot, and consult in person or online — all in one simple app.',
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.9),
                   fontSize: isShort ? 16 : 18,
@@ -249,7 +272,6 @@ class _DesktopIntro extends StatelessWidget {
               ),
             ],
           ),
-          const _InsightStrip(),
         ],
       ),
     );
@@ -267,7 +289,7 @@ class _MobileIntro extends StatelessWidget {
       width: double.infinity,
       padding: EdgeInsets.all(isShort ? 20 : 24),
       decoration: AppDecorations.glass(
-        color: Colors.blue.withValues(alpha: 0.1),
+        color: Colors.teal.withValues(alpha: 0.1),
         radius: BorderRadius.circular(28),
       ),
       child: Column(
@@ -275,7 +297,7 @@ class _MobileIntro extends StatelessWidget {
         children: [
           const SizedBox(height: 14),
           Text(
-            'Welcome to Clinic Companion',
+            'Your health, scheduled in a click',
             style: TextStyle(
               color: Colors.white,
               fontSize: isShort ? 28 : 32,
@@ -286,7 +308,7 @@ class _MobileIntro extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'A simple setup flow for appointments, patient records, and follow-ups.',
+            'Find a doctor, book a slot, and consult in person or online.',
             style: TextStyle(
               color: Colors.white.withValues(alpha: 0.88),
               fontSize: 14,
@@ -471,74 +493,12 @@ class _LogoChip extends StatelessWidget {
           Icon(Icons.medical_services_rounded, size: 18, color: Colors.white),
           SizedBox(width: 10),
           Text(
-            'Swasthya Health Vault',
+            'Swasthya Vault',
             style: TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,
               fontSize: 13,
               letterSpacing: 0.5,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _InsightStrip extends StatelessWidget {
-  const _InsightStrip();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: AppDecorations.glass(
-        color: Colors.blue.withValues(alpha: 0.12),
-        radius: BorderRadius.circular(24),
-      ),
-      child: Row(
-        children: const [
-          _InsightItem(value: '3 min', label: 'Average setup time'),
-          SizedBox(width: 18),
-          _InsightItem(value: '24/7', label: 'Cross-device access'),
-          SizedBox(width: 18),
-          _InsightItem(value: '38%', label: 'Faster check-in'),
-        ],
-      ),
-    );
-  }
-}
-
-class _InsightItem extends StatelessWidget {
-  const _InsightItem({required this.value, required this.label});
-
-  final String value;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 28,
-              fontWeight: FontWeight.w900,
-              height: 1,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.82),
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              height: 1.4,
             ),
           ),
         ],

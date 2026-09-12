@@ -6,6 +6,7 @@ import '../../../shared/appointments_repository.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_decorations.dart';
 import '../../../widgets/app_button.dart';
+import '../../../widgets/video_consultation_actions.dart';
 import '../patient_shell.dart';
 import 'patient_dashboard_provider.dart';
 
@@ -231,65 +232,84 @@ class _AppointmentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final doctor = context.watch<AppointmentsRepository>().doctorById(
+      appointment.doctorId,
+    );
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(18),
       decoration: AppDecorations.card(),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: AppColors.primaryLight.withValues(alpha: 0.4),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            alignment: Alignment.center,
-            child: Icon(
-              Icons.medical_services_rounded,
-              color: AppColors.primary,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  appointment.doctor,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+          Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: AppColors.primaryLight.withValues(alpha: 0.4),
+                  borderRadius: BorderRadius.circular(16),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  '${appointment.specialty} • ${appointment.clinic}',
+                alignment: Alignment.center,
+                child: Icon(
+                  Icons.medical_services_rounded,
+                  color: AppColors.primary,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      appointment.doctor,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${appointment.specialty} • ${appointment.clinic}',
+                      style: TextStyle(
+                        color: AppColors.mutedForeground,
+                        fontSize: 13,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      '${DateFormat('d MMM', 'en_IN').format(appointment.date)} • ${appointment.time}',
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.muted,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  appointment.status,
                   style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
                     color: AppColors.mutedForeground,
-                    fontSize: 13,
                   ),
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  '${DateFormat('d MMM', 'en_IN').format(appointment.date)} • ${appointment.time}',
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: AppColors.muted,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              appointment.status,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: AppColors.mutedForeground,
               ),
-            ),
+            ],
           ),
+          if (appointment.isVideoConsultation) ...[
+            const SizedBox(height: 12),
+            VideoConsultationActions(
+              appointment: appointment,
+              contactPhone: doctor?.phone ?? '',
+            ),
+          ],
         ],
       ),
     );

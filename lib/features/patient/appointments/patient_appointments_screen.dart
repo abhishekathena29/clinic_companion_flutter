@@ -6,6 +6,8 @@ import '../../../shared/appointments_repository.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_decorations.dart';
 import '../../../widgets/app_button.dart';
+import '../../../widgets/consultation_mode_toggle.dart';
+import '../../../widgets/video_consultation_actions.dart';
 import '../doctors/patient_doctors_provider.dart';
 import 'patient_appointments_provider.dart';
 
@@ -26,6 +28,7 @@ class PatientAppointmentsScreen extends StatelessWidget {
     DateTime selectedDate = DateTime.now().add(const Duration(days: 1));
     final timeController = TextEditingController(text: '10:30 AM');
     final reasonController = TextEditingController(text: 'Consultation');
+    String consultationMode = kConsultationInPerson;
 
     await showDialog<void>(
       context: context,
@@ -60,6 +63,12 @@ class PatientAppointmentsScreen extends StatelessWidget {
                         if (value == null) return;
                         setState(() => selected = value);
                       },
+                    ),
+                    const SizedBox(height: 16),
+                    ConsultationModeToggle(
+                      mode: consultationMode,
+                      onChanged: (value) =>
+                          setState(() => consultationMode = value),
                     ),
                     const SizedBox(height: 16),
                     TextField(
@@ -137,6 +146,7 @@ class PatientAppointmentsScreen extends StatelessWidget {
                       date: selectedDate,
                       time: timeController.text.trim(),
                       reason: reasonController.text.trim(),
+                      consultationMode: consultationMode,
                     );
                     Navigator.of(dialogContext).pop();
                   },
@@ -166,15 +176,20 @@ class PatientAppointmentsScreen extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
-              'Appointments',
-              style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900),
+            const Expanded(
+              child: Text(
+                'Appointments',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900),
+              ),
             ),
+            const SizedBox(width: 12),
             AppButton(
               label: 'Request Slot',
               icon: Icons.add_rounded,
+              size: AppButtonSize.small,
               onPressed: () => _showBookingDialog(
                 context,
                 patientId: patientId,
@@ -214,16 +229,25 @@ class PatientAppointmentsScreen extends StatelessWidget {
             ),
           )
         else
-          GridView.count(
-            crossAxisCount: isDesktop ? 2 : 1,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-            childAspectRatio: isDesktop ? 2.6 : 1.9,
-            children: appointments.map((appointment) {
-              return _AppointmentTile(appointment: appointment);
-            }).toList(),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              const spacing = 16.0;
+              final columns = isDesktop ? 2 : 1;
+              final itemWidth = columns == 1
+                  ? constraints.maxWidth
+                  : (constraints.maxWidth - spacing) / 2;
+
+              return Wrap(
+                spacing: spacing,
+                runSpacing: spacing,
+                children: appointments.map((appointment) {
+                  return SizedBox(
+                    width: itemWidth,
+                    child: _AppointmentTile(appointment: appointment),
+                  );
+                }).toList(),
+              );
+            },
           ),
       ],
     );
@@ -237,75 +261,94 @@ class _AppointmentTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final doctor = context.watch<AppointmentsRepository>().doctorById(
+      appointment.doctorId,
+    );
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: AppDecorations.card(),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: AppColors.primaryLight.withValues(alpha: 0.4),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            alignment: Alignment.center,
-            child: Icon(
-              Icons.medical_services_rounded,
-              color: AppColors.primary,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  appointment.doctor,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
+          Row(
+            children: [
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: AppColors.primaryLight.withValues(alpha: 0.4),
+                  borderRadius: BorderRadius.circular(16),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  '${appointment.specialty} • ${appointment.clinic}',
-                  style: TextStyle(
-                    color: AppColors.mutedForeground,
-                    fontSize: 12,
-                  ),
+                alignment: Alignment.center,
+                child: Icon(
+                  Icons.medical_services_rounded,
+                  color: AppColors.primary,
                 ),
-                const SizedBox(height: 10),
-                Text(
-                  '${DateFormat('d MMM yyyy', 'en_IN').format(appointment.date)} • ${appointment.time}',
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  appointment.type,
-                  style: TextStyle(
-                    color: AppColors.mutedForeground,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: AppColors.muted,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              appointment.status,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: AppColors.mutedForeground,
               ),
-            ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      appointment.doctor,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${appointment.specialty} • ${appointment.clinic}',
+                      style: TextStyle(
+                        color: AppColors.mutedForeground,
+                        fontSize: 12,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      '${DateFormat('d MMM yyyy', 'en_IN').format(appointment.date)} • ${appointment.time}',
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      appointment.type,
+                      style: TextStyle(
+                        color: AppColors.mutedForeground,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.muted,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  appointment.status,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.mutedForeground,
+                  ),
+                ),
+              ),
+            ],
           ),
+          if (appointment.isVideoConsultation) ...[
+            const SizedBox(height: 12),
+            VideoConsultationActions(
+              appointment: appointment,
+              contactPhone: doctor?.phone ?? '',
+            ),
+          ],
         ],
       ),
     );

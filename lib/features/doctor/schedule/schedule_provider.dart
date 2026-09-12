@@ -37,6 +37,8 @@ class ScheduleProvider extends ChangeNotifier {
     required String type,
     required String duration,
     String status = 'Pending',
+    String consultationMode = kConsultationInPerson,
+    String meetingLink = '',
   }) {
     return _repository.addAppointment(
       patientId: patientId,
@@ -50,6 +52,8 @@ class ScheduleProvider extends ChangeNotifier {
       type: type,
       duration: duration,
       status: status,
+      consultationMode: consultationMode,
+      meetingLink: meetingLink,
     );
   }
 

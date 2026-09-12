@@ -6,7 +6,10 @@ import '../../../shared/appointments_repository.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_decorations.dart';
 import '../../../widgets/app_button.dart';
+import '../../../widgets/consultation_mode_toggle.dart';
 import '../../../widgets/mobile_header.dart';
+import '../../../widgets/responsive_page_header.dart';
+import '../../../widgets/video_consultation_actions.dart';
 import '../patients/patients_provider.dart';
 import '../queue/queue_provider.dart';
 import 'schedule_provider.dart';
@@ -28,6 +31,8 @@ class ScheduleScreen extends StatelessWidget {
     DateTime selectedDate = DateTime.now();
     bool addToQueue = true;
     final waitController = TextEditingController(text: '10');
+    String consultationMode = kConsultationInPerson;
+    final meetingLinkController = TextEditingController();
 
     await showDialog<void>(
       context: context,
@@ -87,6 +92,22 @@ class ScheduleScreen extends StatelessWidget {
                         prefixIcon: Icon(Icons.timer_rounded),
                       ),
                     ),
+                    const SizedBox(height: 16),
+                    ConsultationModeToggle(
+                      mode: consultationMode,
+                      onChanged: (value) =>
+                          setState(() => consultationMode = value),
+                    ),
+                    if (consultationMode == kConsultationVideo) ...[
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: meetingLinkController,
+                        decoration: const InputDecoration(
+                          labelText: 'Google Meet link',
+                          prefixIcon: Icon(Icons.video_call_rounded),
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 16),
                     InkWell(
                       onTap: () async {
@@ -189,7 +210,7 @@ class ScheduleScreen extends StatelessWidget {
                                 context.read<AuthProvider>().user?.uid,
                               )
                               ?.clinic ??
-                          'Clinic Companion',
+                          'Medi-Connect',
                       patientId: selectedPatient.id,
                       patient: selectedPatient.name,
                       date: selectedDate,
@@ -197,6 +218,8 @@ class ScheduleScreen extends StatelessWidget {
                       type: typeController.text.trim(),
                       duration: durationController.text.trim(),
                       status: 'Confirmed',
+                      consultationMode: consultationMode,
+                      meetingLink: meetingLinkController.text.trim(),
                     );
 
                     final isToday =
@@ -239,44 +262,20 @@ class ScheduleScreen extends StatelessWidget {
           if (!isDesktop)
             const MobileHeader(title: 'Schedule', showSearch: false),
           if (isDesktop)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Schedule',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: -0.5,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Appointments for ${DateFormat('d MMMM yyyy', 'en_IN').format(selectedDate)}',
-                      style: TextStyle(
-                        color: AppColors.mutedForeground,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ],
+            ResponsivePageHeader(
+              title: 'Schedule',
+              subtitle:
+                  'Appointments for ${DateFormat('d MMMM yyyy', 'en_IN').format(selectedDate)}',
+              actions: [
+                const AppButton(
+                  label: 'Sync Calendar',
+                  icon: Icons.sync_rounded,
+                  variant: AppButtonVariant.outline,
                 ),
-                Row(
-                  children: [
-                    const AppButton(
-                      label: 'Sync Calendar',
-                      icon: Icons.sync_rounded,
-                      variant: AppButtonVariant.outline,
-                    ),
-                    const SizedBox(width: 16),
-                    AppButton(
-                      label: 'New Appointment',
-                      icon: Icons.add_rounded,
-                      onPressed: () => _showScheduleDialog(context),
-                    ),
-                  ],
+                AppButton(
+                  label: 'New Appointment',
+                  icon: Icons.add_rounded,
+                  onPressed: () => _showScheduleDialog(context),
                 ),
               ],
             ),
@@ -548,13 +547,16 @@ class _AppointmentListItemState extends State<_AppointmentListItem> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Column(
+                      Expanded(
+                        child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             appointment.patient,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -563,6 +565,8 @@ class _AppointmentListItemState extends State<_AppointmentListItem> {
                           const SizedBox(height: 6),
                           Text(
                             appointment.type,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontSize: 14,
                               color: AppColors.mutedForeground,
@@ -570,7 +574,9 @@ class _AppointmentListItemState extends State<_AppointmentListItem> {
                             ),
                           ),
                         ],
+                        ),
                       ),
+                      const SizedBox(width: 12),
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 12,
@@ -611,13 +617,17 @@ class _AppointmentListItemState extends State<_AppointmentListItem> {
                       ),
                       const SizedBox(width: 16),
                       Icon(
-                        Icons.location_on_rounded,
+                        appointment.isVideoConsultation
+                            ? Icons.videocam_rounded
+                            : Icons.location_on_rounded,
                         size: 16,
                         color: AppColors.mutedForeground,
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        'Consultation Room 3',
+                        appointment.isVideoConsultation
+                            ? 'Video consultation'
+                            : appointment.clinic,
                         style: TextStyle(
                           fontSize: 14,
                           color: AppColors.mutedForeground,
@@ -627,22 +637,33 @@ class _AppointmentListItemState extends State<_AppointmentListItem> {
                     ],
                   ),
                   const SizedBox(height: 20),
-                  Row(
-                    children: const [
-                      AppButton(
-                        label: 'Start Session',
-                        icon: Icons.play_arrow_rounded,
-                        size: AppButtonSize.small,
-                      ),
-                      SizedBox(width: 12),
-                      AppButton(
-                        label: 'Reschedule',
-                        icon: Icons.calendar_today_rounded,
-                        size: AppButtonSize.small,
-                        variant: AppButtonVariant.outline,
-                      ),
-                    ],
-                  ),
+                  if (appointment.isVideoConsultation)
+                    VideoConsultationActions(
+                      appointment: appointment,
+                      contactPhone:
+                          context
+                              .watch<AppointmentsRepository>()
+                              .patientById(appointment.patientId)
+                              ?.phone ??
+                          '',
+                    )
+                  else
+                    Row(
+                      children: const [
+                        AppButton(
+                          label: 'Start Session',
+                          icon: Icons.play_arrow_rounded,
+                          size: AppButtonSize.small,
+                        ),
+                        SizedBox(width: 12),
+                        AppButton(
+                          label: 'Reschedule',
+                          icon: Icons.calendar_today_rounded,
+                          size: AppButtonSize.small,
+                          variant: AppButtonVariant.outline,
+                        ),
+                      ],
+                    ),
                 ],
               ),
             ),
@@ -695,37 +716,6 @@ class _SummaryPanel extends StatelessWidget {
           _summaryRow('Confirmed', confirmed, AppColors.success),
           _summaryRow('Checked-in', checkedIn, AppColors.info),
           _summaryRow('Pending', pending, AppColors.warning),
-          const SizedBox(height: 24),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppColors.primaryLight.withOpacity(0.5),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.primary.withOpacity(0.1)),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(
-                  Icons.lightbulb_rounded,
-                  color: AppColors.primary,
-                  size: 20,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    '2 gaps in the afternoon. Consider moving lab review to 2:40 PM to optimize flow.',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.w600,
-                      height: 1.4,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );

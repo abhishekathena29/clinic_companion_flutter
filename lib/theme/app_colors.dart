@@ -43,30 +43,30 @@ Color hslToColor(double h, double s, double l, {double alpha = 1}) {
 
 class AppColors {
   // Ultra-light, slightly cool background
-  static final background = hslToColor(220, 20, 98);
-  static final foreground = hslToColor(220, 25, 12);
+  static final background = hslToColor(180, 20, 98);
+  static final foreground = hslToColor(190, 30, 12);
 
   // Clean white cards
   static final card = hslToColor(0, 0, 100);
-  static final cardForeground = hslToColor(220, 25, 15);
+  static final cardForeground = hslToColor(190, 30, 15);
 
-  // Modern vibrant primary (Deep Ocean to Cyan vibe)
-  static final primary = hslToColor(225, 80, 55);
+  // Medi-Connect teal primary
+  static final primary = hslToColor(174, 65, 40);
   static final primaryForeground = hslToColor(0, 0, 100);
-  static final primaryLight = hslToColor(225, 75, 95);
+  static final primaryLight = hslToColor(174, 60, 94);
 
   // Soft secondary surfaces
-  static final secondary = hslToColor(220, 25, 93);
-  static final secondaryForeground = hslToColor(225, 80, 45);
+  static final secondary = hslToColor(180, 25, 93);
+  static final secondaryForeground = hslToColor(174, 65, 32);
 
   // Muted variants
-  static final muted = hslToColor(220, 15, 95);
-  static final mutedForeground = hslToColor(220, 15, 45);
+  static final muted = hslToColor(180, 15, 95);
+  static final mutedForeground = hslToColor(190, 15, 45);
 
-  // Beautiful energetic accent (Purple)
-  static final accent = hslToColor(270, 80, 60);
+  // Beautiful energetic accent (Cyan)
+  static final accent = hslToColor(195, 80, 50);
   static final accentForeground = hslToColor(0, 0, 100);
-  static final accentLight = hslToColor(270, 70, 95);
+  static final accentLight = hslToColor(195, 75, 95);
 
   // State colors - adjusted for premium look
   static final success = hslToColor(150, 70, 45);
@@ -86,13 +86,13 @@ class AppColors {
   static final infoLight = hslToColor(200, 80, 95);
 
   // Subtle borders
-  static final border = hslToColor(220, 20, 91);
+  static final border = hslToColor(180, 20, 91);
 
-  // Sidebar colors - modern dark gradient look
-  static final sidebarBackground = hslToColor(225, 40, 15);
+  // Sidebar colors - modern dark teal look
+  static final sidebarBackground = hslToColor(190, 45, 14);
   static final sidebarForeground = hslToColor(0, 0, 100);
-  static final sidebarAccent = hslToColor(225, 50, 25);
-  static final sidebarBorder = hslToColor(225, 30, 20);
+  static final sidebarAccent = hslToColor(180, 45, 24);
+  static final sidebarBorder = hslToColor(185, 35, 20);
 
   // Larger border radius for friendly aesthetics
   static const borderRadius = 16.0;
@@ -101,21 +101,21 @@ class AppColors {
   static final gradientPrimary = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [hslToColor(225, 85, 55), hslToColor(205, 95, 50)],
+    colors: [hslToColor(174, 70, 38), hslToColor(195, 85, 45)],
   );
 
   static final gradientHero = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [
-      hslToColor(225, 85, 55),
-      hslToColor(270, 80, 60),
-    ], // Blue to Purple
+      hslToColor(174, 70, 38),
+      hslToColor(195, 85, 48),
+    ], // Teal to Cyan
   );
 
   static final gradientDark = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [hslToColor(225, 40, 18), hslToColor(225, 40, 12)],
+    colors: [hslToColor(190, 45, 16), hslToColor(190, 45, 11)],
   );
 }

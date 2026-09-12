@@ -19,19 +19,19 @@ class OnboardingProvider extends ChangeNotifier {
 
   final List<OnboardingStep> steps = const [
     OnboardingStep(
-      title: 'Streamlined Patient Journeys',
-      subtitle: 'Capture patient details, history, and vitals in minutes with a guided intake flow.',
-      icon: Icons.assignment_turned_in,
+      title: 'Find the right doctor',
+      subtitle: 'Search specialists near you and compare ratings in seconds.',
+      icon: Icons.search_rounded,
     ),
     OnboardingStep(
-      title: 'Smarter Daily Scheduling',
-      subtitle: 'Visualize upcoming appointments and real-time queue updates across devices.',
-      icon: Icons.schedule,
+      title: 'Book in one tap',
+      subtitle: 'Pick a slot that works for you and confirm instantly.',
+      icon: Icons.event_available_rounded,
     ),
     OnboardingStep(
-      title: 'Connected Care Insights',
-      subtitle: 'Track chronic conditions, labs, and follow-ups with proactive alerts.',
-      icon: Icons.insights,
+      title: 'Consult your way',
+      subtitle: 'Meet in person or join a video consultation from anywhere.',
+      icon: Icons.video_call_rounded,
     ),
   ];
 

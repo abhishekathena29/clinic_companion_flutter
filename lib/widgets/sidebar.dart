@@ -18,8 +18,14 @@ class Sidebar extends StatelessWidget {
     final auth = context.watch<AuthProvider>();
     final name = auth.profileName.isEmpty ? 'Doctor' : auth.profileName;
     final clinic = auth.profileClinic.isEmpty
-        ? 'Clinic Companion'
+        ? 'Medi-Connect'
         : auth.profileClinic;
+    final initials = name
+        .split(' ')
+        .where((part) => part.isNotEmpty)
+        .take(2)
+        .map((part) => part.substring(0, 1).toUpperCase())
+        .join();
 
     return Container(
       width: 280,
@@ -67,17 +73,17 @@ class Sidebar extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'Swasthya',
+                        'Medi-Connect',
                         style: TextStyle(
-                          fontSize: 24,
+                          fontSize: 22,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
-                          letterSpacing: 0.5,
+                          letterSpacing: 0.3,
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Health Vault',
+                        'Doctor Portal',
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.white.withOpacity(0.8),
@@ -205,9 +211,9 @@ class Sidebar extends StatelessWidget {
                       ],
                     ),
                     alignment: Alignment.center,
-                    child: const Text(
-                      'DR',
-                      style: TextStyle(
+                    child: Text(
+                      initials.isEmpty ? 'DR' : initials,
+                      style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                         fontSize: 18,

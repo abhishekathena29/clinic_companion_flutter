@@ -41,8 +41,10 @@ dependencies:
   firebase_auth: 
   cloud_firestore: 
   provider: 
-  firebase_storage:
   file_picker:
+  url_launcher:
+  image_picker:
+  http:
 
 dev_dependencies:
   flutter_test:

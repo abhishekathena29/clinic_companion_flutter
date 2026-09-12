@@ -5,6 +5,7 @@ import '../../../theme/app_colors.dart';
 import '../../../theme/app_decorations.dart';
 import '../../../widgets/app_button.dart';
 import '../../../widgets/mobile_header.dart';
+import '../../../widgets/responsive_page_header.dart';
 import 'patients_provider.dart';
 
 String _patientGenderLabel(String gender) {
@@ -189,44 +190,19 @@ class PatientsScreen extends StatelessWidget {
           if (!isDesktop)
             const MobileHeader(title: 'Patients', showSearch: false),
           if (isDesktop)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Patient Directory',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: -0.5,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Manage records, health vaults, and history',
-                      style: TextStyle(
-                        color: AppColors.mutedForeground,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ],
+            ResponsivePageHeader(
+              title: 'Patient Directory',
+              subtitle: 'Manage records, health vaults, and history',
+              actions: [
+                const AppButton(
+                  label: 'Export CSV',
+                  icon: Icons.download_rounded,
+                  variant: AppButtonVariant.outline,
                 ),
-                Row(
-                  children: [
-                    const AppButton(
-                      label: 'Export CSV',
-                      icon: Icons.download_rounded,
-                      variant: AppButtonVariant.outline,
-                    ),
-                    const SizedBox(width: 16),
-                    AppButton(
-                      label: 'Add Patient',
-                      icon: Icons.person_add_rounded,
-                      onPressed: () => _showAddPatientDialog(context),
-                    ),
-                  ],
+                AppButton(
+                  label: 'Add Patient',
+                  icon: Icons.person_add_rounded,
+                  onPressed: () => _showAddPatientDialog(context),
                 ),
               ],
             ),
@@ -385,17 +361,22 @@ class PatientsScreen extends StatelessWidget {
                       border: Border(top: BorderSide(color: AppColors.border)),
                     ),
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
+                        Expanded(
+                          child: Text(
                           'Showing ${filteredPatients.length} of ${provider.patients.length} patients',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontSize: 14,
                             color: AppColors.mutedForeground,
                             fontWeight: FontWeight.w600,
                           ),
+                          ),
                         ),
+                        const SizedBox(width: 12),
                         Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: const [
                             AppButton(
                               label: 'Prev',
@@ -477,13 +458,15 @@ class _MobilePatientCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(
+                    Expanded(
+                      child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           patient.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
@@ -492,6 +475,8 @@ class _MobilePatientCard extends StatelessWidget {
                         const SizedBox(height: 4),
                         Text(
                           '${patient.age}y • ${_patientGenderLabel(patient.gender)} • ${patient.totalVisits} visits',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontSize: 13,
                             color: AppColors.mutedForeground,
@@ -499,6 +484,7 @@ class _MobilePatientCard extends StatelessWidget {
                           ),
                         ),
                       ],
+                      ),
                     ),
                     Icon(
                       Icons.chevron_right_rounded,

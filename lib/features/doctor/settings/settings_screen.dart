@@ -5,6 +5,7 @@ import '../../../theme/app_colors.dart';
 import '../../../theme/app_decorations.dart';
 import '../../../widgets/app_button.dart';
 import '../../../widgets/mobile_header.dart';
+import '../../../widgets/responsive_page_header.dart';
 import 'settings_provider.dart';
 
 Future<void> _showEditProfileDialog(BuildContext context) async {
@@ -14,6 +15,7 @@ Future<void> _showEditProfileDialog(BuildContext context) async {
   final specialtyController = TextEditingController(
     text: auth.profileSpecialty,
   );
+  final phoneController = TextEditingController(text: auth.profilePhone);
 
   await showDialog<void>(
     context: context,
@@ -51,6 +53,15 @@ Future<void> _showEditProfileDialog(BuildContext context) async {
                 prefixIcon: Icon(Icons.medical_services_rounded),
               ),
             ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: phoneController,
+              keyboardType: TextInputType.phone,
+              decoration: const InputDecoration(
+                labelText: 'Phone (for WhatsApp consultations)',
+                prefixIcon: Icon(Icons.phone_rounded),
+              ),
+            ),
           ],
         ),
       ),
@@ -67,6 +78,7 @@ Future<void> _showEditProfileDialog(BuildContext context) async {
               name: nameController.text,
               clinic: clinicController.text,
               specialty: specialtyController.text,
+              phone: phoneController.text,
             );
             if (dialogContext.mounted) {
               Navigator.of(dialogContext).pop();
@@ -95,30 +107,10 @@ class SettingsScreen extends StatelessWidget {
         if (!isDesktop)
           const MobileHeader(title: 'Settings', showSearch: false),
         if (isDesktop)
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Settings & Security',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Clinic preferences, notifications, and security controls',
-                    style: TextStyle(
-                      color: AppColors.mutedForeground,
-                      fontSize: 16,
-                    ),
-                  ),
-                ],
-              ),
+          ResponsivePageHeader(
+            title: 'Settings & Security',
+            subtitle: 'Clinic preferences, notifications, and security controls',
+            actions: [
               AppButton(
                 label: 'Sign Out',
                 icon: Icons.logout_rounded,

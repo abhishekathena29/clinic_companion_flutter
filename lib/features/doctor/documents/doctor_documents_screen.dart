@@ -1,5 +1,8 @@
+import 'dart:typed_data';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
@@ -260,11 +263,13 @@ class DoctorDocumentsScreen extends StatelessWidget {
     final provider = context.read<DoctorDocumentsProvider>();
     final patients = provider.patients;
 
+    final imagePicker = ImagePicker();
     String? selectedPatientId;
     String? selectedPatientName;
     String category = 'Lab Report';
     String notes = '';
-    PlatformFile? pickedFile;
+    String? pickedName;
+    Uint8List? pickedBytes;
 
     showDialog(
       context: context,
@@ -394,7 +399,7 @@ class DoctorDocumentsScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 16),
 
-                      // File picker
+                      // File / scan picker
                       Text(
                         'File',
                         style: TextStyle(
@@ -403,70 +408,122 @@ class DoctorDocumentsScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      InkWell(
-                        borderRadius: BorderRadius.circular(12),
-                        onTap: () async {
-                          final result = await FilePicker.pickFiles(
-                            type: FileType.custom,
-                            allowedExtensions: [
-                              'pdf',
-                              'png',
-                              'jpg',
-                              'jpeg',
-                              'doc',
-                              'docx',
-                            ],
-                            withData: true,
-                          );
-                          if (result != null && result.files.isNotEmpty) {
-                            setState(() => pickedFile = result.files.first);
-                          }
-                        },
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: AppColors.muted,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: AppColors.border,
-                              style: BorderStyle.solid,
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () async {
+                                final photo = await imagePicker.pickImage(
+                                  source: ImageSource.camera,
+                                  imageQuality: 85,
+                                );
+                                if (photo == null) return;
+                                final bytes = await photo.readAsBytes();
+                                setState(() {
+                                  pickedName = photo.name;
+                                  pickedBytes = bytes;
+                                });
+                              },
+                              icon: const Icon(
+                                Icons.document_scanner_rounded,
+                                size: 18,
+                              ),
+                              label: const Text('Scan'),
                             ),
                           ),
-                          child: Column(
-                            children: [
-                              Icon(
-                                pickedFile != null
-                                    ? Icons.check_circle_rounded
-                                    : Icons.cloud_upload_outlined,
-                                size: 36,
-                                color: pickedFile != null
-                                    ? AppColors.success
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () async {
+                                final photo = await imagePicker.pickImage(
+                                  source: ImageSource.gallery,
+                                  imageQuality: 85,
+                                );
+                                if (photo == null) return;
+                                final bytes = await photo.readAsBytes();
+                                setState(() {
+                                  pickedName = photo.name;
+                                  pickedBytes = bytes;
+                                });
+                              },
+                              icon: const Icon(
+                                Icons.photo_library_rounded,
+                                size: 18,
+                              ),
+                              label: const Text('Gallery'),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () async {
+                                final files = await FilePicker.pickFiles(
+                                  type: FileType.custom,
+                                  allowedExtensions: [
+                                    'pdf',
+                                    'png',
+                                    'jpg',
+                                    'jpeg',
+                                    'doc',
+                                    'docx',
+                                  ],
+                                );
+                                if (files.isEmpty) return;
+                                final bytes = await files.first.readAsBytes();
+                                setState(() {
+                                  pickedName = files.first.name;
+                                  pickedBytes = bytes;
+                                });
+                              },
+                              icon: const Icon(
+                                Icons.upload_file_rounded,
+                                size: 18,
+                              ),
+                              label: const Text('File'),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: AppColors.muted,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: Column(
+                          children: [
+                            Icon(
+                              pickedBytes != null
+                                  ? Icons.check_circle_rounded
+                                  : Icons.cloud_upload_outlined,
+                              size: 36,
+                              color: pickedBytes != null
+                                  ? AppColors.success
+                                  : AppColors.mutedForeground,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              pickedName ?? 'No file selected yet',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: pickedBytes != null
+                                    ? AppColors.foreground
                                     : AppColors.mutedForeground,
                               ),
-                              const SizedBox(height: 8),
+                              textAlign: TextAlign.center,
+                            ),
+                            if (pickedBytes != null)
                               Text(
-                                pickedFile != null
-                                    ? pickedFile!.name
-                                    : 'Tap to select a file',
+                                '${(pickedBytes!.lengthInBytes / 1024).toStringAsFixed(1)} KB',
                                 style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  color: pickedFile != null
-                                      ? AppColors.foreground
-                                      : AppColors.mutedForeground,
+                                  fontSize: 12,
+                                  color: AppColors.mutedForeground,
                                 ),
-                                textAlign: TextAlign.center,
                               ),
-                              if (pickedFile != null)
-                                Text(
-                                  '${(pickedFile!.size / 1024).toStringAsFixed(1)} KB',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: AppColors.mutedForeground,
-                                  ),
-                                ),
-                            ],
-                          ),
+                          ],
                         ),
                       ),
                     ],
@@ -482,7 +539,7 @@ class DoctorDocumentsScreen extends StatelessWidget {
                   ),
                 ),
                 ElevatedButton(
-                  onPressed: (selectedPatientId == null || pickedFile == null)
+                  onPressed: (selectedPatientId == null || pickedBytes == null)
                       ? null
                       : () async {
                           Navigator.pop(ctx);
@@ -491,8 +548,8 @@ class DoctorDocumentsScreen extends StatelessWidget {
                             patientName: selectedPatientName ?? '',
                             doctorId: auth.user?.uid ?? '',
                             doctorName: auth.profileName,
-                            fileName: pickedFile!.name,
-                            fileBytes: pickedFile!.bytes!,
+                            fileName: pickedName ?? 'document',
+                            fileBytes: pickedBytes!,
                             category: category,
                             notes: notes,
                           );

@@ -44,8 +44,8 @@ class AuthScreen extends StatelessWidget {
                             children: [
                               Text(
                                 provider.isLogin
-                                    ? 'Welcome back to\nClinic Companion'
-                                    : 'Join Clinic\nCompanion',
+                                    ? 'Welcome back to\nMedi-Connect'
+                                    : 'Join\nMedi-Connect',
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 48,
@@ -56,7 +56,7 @@ class AuthScreen extends StatelessWidget {
                               ),
                               const SizedBox(height: 20),
                               Text(
-                                'Securely access appointments, records, and patient journeys from any device.',
+                                'Your health, scheduled in a click.',
                                 style: TextStyle(
                                   color: Colors.white.withOpacity(0.9),
                                   fontSize: 18,
@@ -67,17 +67,7 @@ class AuthScreen extends StatelessWidget {
                             ],
                           ),
                         ),
-                        const SizedBox(height: 48),
-                        _TrustRow(),
                         const Spacer(),
-                        Text(
-                          'HIPAA-ready workflows and regional compliance built-in',
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.7),
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
                       ],
                     ),
                   ),
@@ -362,7 +352,7 @@ class _BrandChip extends StatelessWidget {
           Icon(Icons.medical_services_rounded, size: 18, color: Colors.white),
           const SizedBox(width: 10),
           Text(
-            'Swasthya Health Vault',
+            'Swasthya Vault',
             style: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,
@@ -488,50 +478,3 @@ class _TypeCard extends StatelessWidget {
   }
 }
 
-class _TrustRow extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        _TrustBadge(label: 'ISO 27001', icon: Icons.verified_rounded),
-        const SizedBox(width: 16),
-        _TrustBadge(label: 'HL7 Ready', icon: Icons.health_and_safety_rounded),
-        const SizedBox(width: 16),
-        _TrustBadge(label: '99.9% Uptime', icon: Icons.cloud_done_rounded),
-      ],
-    );
-  }
-}
-
-class _TrustBadge extends StatelessWidget {
-  const _TrustBadge({required this.label, required this.icon});
-
-  final String label;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Colors.white.withOpacity(0.2)),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, size: 16, color: Colors.white),
-          const SizedBox(width: 8),
-          Text(
-            label,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}

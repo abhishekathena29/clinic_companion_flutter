@@ -65,15 +65,14 @@ class DoctorDocumentsProvider extends ChangeNotifier {
     required String category,
     String notes = '',
   }) async {
-    final result = await FilePicker.pickFiles(
+    final files = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['pdf', 'png', 'jpg', 'jpeg', 'doc', 'docx'],
-      withData: true,
     );
-    if (result == null || result.files.isEmpty) return;
+    if (files.isEmpty) return;
 
-    final file = result.files.first;
-    if (file.bytes == null) return;
+    final file = files.first;
+    final fileBytes = await file.readAsBytes();
 
     _isUploading = true;
     _error = null;
@@ -87,7 +86,7 @@ class DoctorDocumentsProvider extends ChangeNotifier {
         uploadedByName: doctorName,
         uploadedByRole: 'doctor',
         fileName: file.name,
-        fileBytes: file.bytes!,
+        fileBytes: fileBytes,
         category: category,
         notes: notes,
       );
